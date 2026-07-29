@@ -24,11 +24,11 @@ const CreateOrderSchema = z.object({
 export const createOrder = createServerFn({ method: "POST" })
   .validator((data: unknown) => CreateOrderSchema.parse(data))
   .handler(async ({ data }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { supabasePublicServer } = await import("@/integrations/supabase/client.public-server");
 
     // Fetch menu items to compute authoritative prices
     const ids = data.items.map((i) => i.menu_item_id);
-    const { data: menu, error: menuErr } = await supabaseAdmin
+    const { data: menu, error: menuErr } = await supabasePublicServer
       .from("menu_items")
       .select("id, name, price_cents, available")
       .in("id", ids);
@@ -50,7 +50,7 @@ export const createOrder = createServerFn({ method: "POST" })
       };
     });
 
-    const { data: order, error: orderErr } = await supabaseAdmin
+    const { data: order, error: orderErr } = await supabasePublicServer
       .from("orders")
       .insert({
         customer_name: data.customer_name,
@@ -64,14 +64,14 @@ export const createOrder = createServerFn({ method: "POST" })
       .single();
     if (orderErr || !order) throw new Error(orderErr?.message ?? "Falhou criar pedido");
 
-    const { error: itemsErr } = await supabaseAdmin
+    const { error: itemsErr } = await supabasePublicServer
       .from("order_items")
       .insert(itemRows.map((r) => ({ ...r, order_id: order.id })));
     if (itemsErr) throw new Error(itemsErr.message);
 
     // Decrement stock via ingredients (best-effort, no failure)
     try {
-      const { data: recipes } = await supabaseAdmin
+      const { data: recipes } = await supabasePublicServer
         .from("menu_item_ingredients")
         .select("menu_item_id, stock_item_id, quantity")
         .in("menu_item_id", ids);
@@ -86,13 +86,13 @@ export const createOrder = createServerFn({ method: "POST" })
           }
         }
         for (const [stockId, qty] of decrements) {
-          const { data: cur } = await supabaseAdmin
+          const { data: cur } = await supabasePublicServer
             .from("stock_items")
             .select("quantity")
             .eq("id", stockId)
             .single();
           if (cur) {
-            await supabaseAdmin
+            await supabasePublicServer
               .from("stock_items")
               .update({ quantity: Math.max(0, Number(cur.quantity) - qty) })
               .eq("id", stockId);

@@ -199,6 +199,18 @@ export const sendManualSms = createServerFn({ method: "POST" })
     return res;
   });
 
+export const getSmsProviderStatus = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data: isStaff } = await context.supabase.rpc("is_staff", {
+      _user_id: context.userId,
+    });
+    if (!isStaff) throw new Error("Não autorizado");
+
+    const { getTwilioConfigurationStatus } = await import("@/lib/sms.server");
+    return getTwilioConfigurationStatus();
+  });
+
 const NotificationSettingsSchema = z.object({
   admin_phone: z.string().trim().max(20).nullable(),
   notify_customer: z.boolean(),

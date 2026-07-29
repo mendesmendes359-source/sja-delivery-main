@@ -1,11 +1,21 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { queryOptions, useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import {
+  queryOptions,
+  useMutation,
+  useQuery,
+  useQueryClient,
+  useSuspenseQuery,
+} from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { BellRing, Save, Send } from "lucide-react";
+import { BellRing, CircleCheck, CircleX, Save, Send } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { saveNotificationSettings, sendManualSms } from "@/lib/orders.functions";
+import {
+  getSmsProviderStatus,
+  saveNotificationSettings,
+  sendManualSms,
+} from "@/lib/orders.functions";
 import { formatDate, STATUS_LABEL } from "@/lib/format";
 import {
   NOTIFICATION_SETTINGS_PHONE,
@@ -65,6 +75,11 @@ function SmsPage() {
   const [notifyAdmin, setNotifyAdmin] = useState(data.settings.notify_admin);
   const sendFn = useServerFn(sendManualSms);
   const saveSettingsFn = useServerFn(saveNotificationSettings);
+  const providerStatusFn = useServerFn(getSmsProviderStatus);
+  const providerStatus = useQuery({
+    queryKey: ["admin", "sms", "provider-status"],
+    queryFn: () => providerStatusFn(),
+  });
 
   const send = useMutation({
     mutationFn: () => sendFn({ data: { to, body } }),
@@ -175,6 +190,46 @@ function SmsPage() {
         </div>
 
         <div className="space-y-6">
+          <section className="rounded-xl border bg-card p-5">
+            <div className="flex items-start gap-3">
+              <span
+                className={`grid h-9 w-9 shrink-0 place-items-center rounded-full ${
+                  providerStatus.data?.configured
+                    ? "bg-emerald-100 text-emerald-700"
+                    : "bg-amber-100 text-amber-700"
+                }`}
+              >
+                {providerStatus.data?.configured ? (
+                  <CircleCheck className="h-4 w-4" aria-hidden="true" />
+                ) : (
+                  <CircleX className="h-4 w-4" aria-hidden="true" />
+                )}
+              </span>
+              <div>
+                <h2 className="font-semibold">Ligação à Twilio</h2>
+                {providerStatus.isPending ? (
+                  <p className="text-xs text-muted-foreground">A verificar configuração…</p>
+                ) : providerStatus.data?.configured ? (
+                  <p className="text-xs text-emerald-700">
+                    Configurada por{" "}
+                    {providerStatus.data.authMode === "api_key" ? "API Key" : "Auth Token"} e{" "}
+                    {providerStatus.data.senderMode === "messaging_service"
+                      ? "Messaging Service"
+                      : "número Twilio"}
+                    .
+                  </p>
+                ) : (
+                  <div className="space-y-1 text-xs text-amber-800">
+                    <p>O envio está inativo.</p>
+                    {(providerStatus.data?.issues ?? []).map((issue) => (
+                      <p key={issue}>• {issue}</p>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
+
           <section className="rounded-xl border bg-card p-5">
             <div className="flex items-start gap-3">
               <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-accent text-brand">

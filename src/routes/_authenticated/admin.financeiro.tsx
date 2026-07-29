@@ -34,13 +34,13 @@ function FinancePage() {
     },
   });
 
-  const [newExp, setNewExp] = useState({ category: "", description: "", amount_eur: "", expense_date: today.toISOString().slice(0, 10) });
+  const [newExp, setNewExp] = useState({ category: "", description: "", amount_kz: "", expense_date: today.toISOString().slice(0, 10) });
   const addExp = useMutation({
     mutationFn: async () => {
       const { error } = await supabase.from("expenses").insert({
         category: newExp.category,
         description: newExp.description || null,
-        amount_cents: Math.round(Number(newExp.amount_eur) * 100),
+        amount_cents: Math.round(Number(newExp.amount_kz) * 100),
         expense_date: newExp.expense_date,
       });
       if (error) throw error;
@@ -48,7 +48,7 @@ function FinancePage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["expenses"] });
       qc.invalidateQueries({ queryKey: ["fin"] });
-      setNewExp({ category: "", description: "", amount_eur: "", expense_date: today.toISOString().slice(0, 10) });
+      setNewExp({ category: "", description: "", amount_kz: "", expense_date: today.toISOString().slice(0, 10) });
       toast.success("Despesa adicionada");
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Erro"),
@@ -108,11 +108,11 @@ function FinancePage() {
           <div className="mt-3 space-y-3">
             <input placeholder="Categoria" value={newExp.category} onChange={(e) => setNewExp({ ...newExp, category: e.target.value })} className="w-full rounded border bg-background px-3 py-2 text-sm" />
             <input placeholder="Descrição" value={newExp.description} onChange={(e) => setNewExp({ ...newExp, description: e.target.value })} className="w-full rounded border bg-background px-3 py-2 text-sm" />
-            <input type="number" step="0.01" placeholder="Valor (€)" value={newExp.amount_eur} onChange={(e) => setNewExp({ ...newExp, amount_eur: e.target.value })} className="w-full rounded border bg-background px-3 py-2 text-sm" />
+            <input type="number" step="1" min="0" placeholder="Valor (Kz)" value={newExp.amount_kz} onChange={(e) => setNewExp({ ...newExp, amount_kz: e.target.value })} className="w-full rounded border bg-background px-3 py-2 text-sm" />
             <input type="date" value={newExp.expense_date} onChange={(e) => setNewExp({ ...newExp, expense_date: e.target.value })} className="w-full rounded border bg-background px-3 py-2 text-sm" />
             <button
               onClick={() => addExp.mutate()}
-              disabled={!newExp.category || !newExp.amount_eur}
+              disabled={!newExp.category || !newExp.amount_kz}
               className="inline-flex w-full items-center justify-center gap-1 rounded-md bg-brand px-3 py-2 text-sm font-semibold text-brand-foreground disabled:opacity-50"
             >
               <Plus className="h-4 w-4" /> Adicionar

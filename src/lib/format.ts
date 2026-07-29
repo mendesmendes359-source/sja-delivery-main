@@ -2,6 +2,7 @@ export function formatMoney(cents: number): string {
   return new Intl.NumberFormat("pt-AO", {
     style: "currency",
     currency: "AOA",
+    currencyDisplay: "narrowSymbol",
     maximumFractionDigits: 0,
   }).format(cents / 100);
 }

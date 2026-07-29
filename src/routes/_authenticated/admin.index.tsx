@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery, queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { formatMoney } from "@/lib/format";
-import { ClipboardList, Euro, Package, TrendingUp } from "lucide-react";
+import { Banknote, ClipboardList, Package, TrendingUp } from "lucide-react";
 
 const dashQO = queryOptions({
   queryKey: ["admin", "dash"],
@@ -40,7 +40,7 @@ function Dashboard() {
       <div className="grid gap-4 md:grid-cols-4">
         <Card icon={<ClipboardList className="h-4 w-4" />} label="Pedidos hoje" value={String(data.today_orders.length)} />
         <Card icon={<TrendingUp className="h-4 w-4" />} label="Pendentes" value={String(data.pending)} />
-        <Card icon={<Euro className="h-4 w-4" />} label="Receita entregue" value={formatMoney(data.revenue)} />
+        <Card icon={<Banknote className="h-4 w-4" />} label="Receita entregue" value={formatMoney(data.revenue)} />
         <Card icon={<Package className="h-4 w-4" />} label="Stock baixo" value={String(data.lowStock.length)} />
       </div>
       {data.lowStock.length > 0 && (

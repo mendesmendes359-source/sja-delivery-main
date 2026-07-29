@@ -6,6 +6,7 @@ import {
   NOTIFICATION_SETTINGS_PHONE,
   parseNotificationSettings,
 } from "@/lib/sms-log";
+import { formatMoney } from "@/lib/format";
 
 export type OrderStage = Database["public"]["Enums"]["order_status"];
 
@@ -34,17 +35,9 @@ const STAGE_LABELS: Record<OrderStage, string> = {
   cancelado: "Cancelado",
 };
 
-function formatKwanza(cents: number) {
-  return new Intl.NumberFormat("pt-AO", {
-    style: "currency",
-    currency: "AOA",
-    maximumFractionDigits: 0,
-  }).format(cents / 100);
-}
-
 function customerMessage(order: OrderNotificationData, stage: OrderStage) {
   const messages: Record<OrderStage, string> = {
-    pendente: `SJA: recebemos o pedido ${order.order_number}. Total ${formatKwanza(order.total_cents)}. Avisaremos em cada fase.`,
+    pendente: `SJA: recebemos o pedido ${order.order_number}. Total ${formatMoney(order.total_cents)}. Avisaremos em cada fase.`,
     aceite: `SJA: o pedido ${order.order_number} foi aceite e seguirá para preparação.`,
     em_preparacao: `SJA: o pedido ${order.order_number} está a ser preparado.`,
     saiu_entrega:
@@ -60,7 +53,7 @@ function customerMessage(order: OrderNotificationData, stage: OrderStage) {
 
 function adminMessage(order: OrderNotificationData, stage: OrderStage) {
   const type = order.order_type === "entrega" ? "entrega" : "take-away";
-  return `SJA Admin: ${order.order_number} · ${STAGE_LABELS[stage]}. Cliente: ${order.customer_name} (${order.customer_phone}). ${type}, ${formatKwanza(order.total_cents)}.`;
+  return `SJA Admin: ${order.order_number} · ${STAGE_LABELS[stage]}. Cliente: ${order.customer_name} (${order.customer_phone}). ${type}, ${formatMoney(order.total_cents)}.`;
 }
 
 async function sendAndLog(

@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useCart } from "@/lib/cart";
 import { LockKeyhole, ShoppingBag } from "lucide-react";
+import { BrandLogo } from "@/components/brand-logo";
 
 export function SiteHeader() {
   const { count } = useCart();
@@ -8,9 +9,7 @@ export function SiteHeader() {
     <header className="sticky top-0 z-40 border-b bg-background/90 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 md:py-4">
         <Link to="/" className="flex items-center gap-2">
-          <span className="grid h-9 w-9 place-items-center rounded-md bg-brand font-display text-lg font-bold text-brand-foreground">
-            S
-          </span>
+          <BrandLogo className="h-10 w-10" aria-hidden="true" />
           <span className="font-display text-xl font-bold tracking-tight">
             SJA{" "}
             <span className="hidden font-normal text-muted-foreground sm:inline">fast food</span>
@@ -48,7 +47,10 @@ export function SiteFooter() {
     <footer className="mt-16 border-t bg-muted/40">
       <div className="mx-auto grid max-w-6xl gap-6 px-4 py-10 text-sm text-muted-foreground md:grid-cols-4">
         <div>
-          <div className="font-display text-lg font-bold text-foreground">SJA Fast Food</div>
+          <div className="flex items-center gap-2">
+            <BrandLogo className="h-10 w-10" aria-hidden="true" />
+            <div className="font-display text-lg font-bold text-foreground">SJA Fast Food</div>
+          </div>
           <p className="mt-2">Hambúrgueres, sandes e sabores feitos na hora em Luanda.</p>
         </div>
         <div>

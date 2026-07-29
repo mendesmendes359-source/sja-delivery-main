@@ -71,7 +71,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "SJA Fast Food — Peça online" },
-      { name: "description", content: "SJA Fast Food — hambúrgueres, sandes e menu completo. Peça online para entrega ou take-away." },
+      {
+        name: "description",
+        content:
+          "SJA Fast Food — hambúrgueres, sandes e menu completo. Peça online para entrega ou take-away.",
+      },
       { property: "og:title", content: "SJA Fast Food" },
       { property: "og:description", content: "Peça online — entrega rápida ou take-away." },
       { property: "og:type", content: "website" },
@@ -79,7 +83,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     ],
     links: [
       { rel: "stylesheet", href: appCss },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "icon", href: "/favicon.ico", sizes: "any" },
+      { rel: "icon", href: "/favicon-32x32.png", type: "image/png", sizes: "32x32" },
+      { rel: "apple-touch-icon", href: "/apple-touch-icon.png", sizes: "180x180" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {

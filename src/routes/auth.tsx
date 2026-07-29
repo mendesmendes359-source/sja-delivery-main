@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { BrandLogo } from "@/components/brand-logo";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -53,9 +54,7 @@ function AuthPage() {
     <div className="min-h-screen bg-muted/30 grid place-items-center px-4">
       <div className="w-full max-w-md rounded-2xl border bg-card p-8 shadow-sm">
         <div className="text-center">
-          <div className="mx-auto grid h-12 w-12 place-items-center rounded-lg bg-brand font-display text-2xl font-bold text-brand-foreground">
-            S
-          </div>
+          <BrandLogo className="mx-auto h-16 w-16" alt="Logótipo SJA Fast Food" />
           <h1 className="mt-4 font-display text-2xl font-bold">Área de gestão SJA</h1>
           <p className="mt-1 text-sm text-muted-foreground">Entre com o seu email e senha</p>
         </div>

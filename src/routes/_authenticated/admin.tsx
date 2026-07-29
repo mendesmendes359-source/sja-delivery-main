@@ -32,6 +32,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import { BrandLogo } from "@/components/brand-logo";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   beforeLoad: async () => {
@@ -157,9 +158,7 @@ function AdminLayout() {
               collapsed ? "justify-center" : "min-w-0 flex-1 gap-2",
             )}
           >
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-brand font-display text-lg font-bold text-brand-foreground">
-              S
-            </span>
+            <BrandLogo className="h-9 w-9" aria-hidden="true" />
             {collapsed ? null : (
               <span className="truncate font-display text-lg font-bold">SJA · Admin</span>
             )}
@@ -219,9 +218,12 @@ function AdminLayout() {
         >
           <MenuIcon className="h-5 w-5" aria-hidden="true" />
         </button>
-        <div className="min-w-0 px-3 text-center">
-          <div className="truncate text-xs text-sidebar-foreground/70">SJA Admin</div>
-          <div className="truncate font-display text-sm font-semibold">{currentModule}</div>
+        <div className="flex min-w-0 items-center gap-2 px-3 text-left">
+          <BrandLogo className="h-8 w-8" aria-hidden="true" />
+          <div className="min-w-0">
+            <div className="truncate text-xs text-sidebar-foreground/70">SJA Admin</div>
+            <div className="truncate font-display text-sm font-semibold">{currentModule}</div>
+          </div>
         </div>
         <button
           type="button"
@@ -241,9 +243,7 @@ function AdminLayout() {
         >
           <SheetHeader className="border-b border-sidebar-border px-5 py-5 text-left">
             <SheetTitle className="flex items-center gap-3 font-display text-sidebar-foreground">
-              <span className="grid h-9 w-9 place-items-center rounded-md bg-brand text-lg font-bold text-brand-foreground">
-                S
-              </span>
+              <BrandLogo className="h-9 w-9" aria-hidden="true" />
               SJA · Admin
             </SheetTitle>
             <SheetDescription className="text-sidebar-foreground/65">

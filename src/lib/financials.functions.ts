@@ -9,19 +9,18 @@ const RangeSchema = z.object({
 
 export const getFinancials = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => RangeSchema.parse(d))
+  .validator((d: unknown) => RangeSchema.parse(d))
   .handler(async ({ data, context }) => {
     const { data: isStaff } = await context.supabase.rpc("is_staff", { _user_id: context.userId });
     if (!isStaff) throw new Error("Não autorizado");
 
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const [ordersRes, expensesRes] = await Promise.all([
-      supabaseAdmin
+      context.supabase
         .from("orders")
         .select("total_cents, status, created_at")
         .gte("created_at", data.from)
         .lte("created_at", data.to),
-      supabaseAdmin
+      context.supabase
         .from("expenses")
         .select("amount_cents, category, expense_date")
         .gte("expense_date", data.from.slice(0, 10))
@@ -51,7 +50,7 @@ export const getFinancials = createServerFn({ method: "POST" })
         expenses.reduce<Record<string, number>>((acc, e) => {
           acc[e.category] = (acc[e.category] ?? 0) + e.amount_cents;
           return acc;
-        }, {})
+        }, {}),
       ).map(([category, total_cents]) => ({ category, total_cents })),
     };
   });

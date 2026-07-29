@@ -1,5 +1,5 @@
 import type { Database } from "@/integrations/supabase/types";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { sendSmsServer, type SmsResult } from "@/lib/sms.server";
 import {
   encodeSmsLogMetadata,
@@ -64,12 +64,13 @@ function adminMessage(order: OrderNotificationData, stage: OrderStage) {
 }
 
 async function sendAndLog(
+  client: SupabaseClient<Database>,
   orderId: string,
   stage: OrderStage,
   recipient: NotificationRecipient,
 ): Promise<SmsResult> {
   const result = await sendSmsServer(recipient.phone, recipient.body);
-  const { error } = await supabaseAdmin.from("sms_logs").insert({
+  const { error } = await client.from("sms_logs").insert({
     to_phone: recipient.phone,
     body: recipient.body,
     status: result.ok ? "sent" : result.skipped ? "skipped" : "failed",
@@ -89,8 +90,12 @@ async function sendAndLog(
   return result;
 }
 
-export async function notifyOrderStage(order: OrderNotificationData, stage: OrderStage) {
-  const { data: settingsRow, error } = await supabaseAdmin
+export async function notifyOrderStage(
+  order: OrderNotificationData,
+  stage: OrderStage,
+  client: SupabaseClient<Database>,
+) {
+  const { data: settingsRow, error } = await client
     .from("sms_logs")
     .select("body")
     .eq("to_phone", NOTIFICATION_SETTINGS_PHONE)
@@ -120,7 +125,7 @@ export async function notifyOrderStage(order: OrderNotificationData, stage: Orde
   }
 
   const results = await Promise.all(
-    recipients.map((recipient) => sendAndLog(order.id, stage, recipient)),
+    recipients.map((recipient) => sendAndLog(client, order.id, stage, recipient)),
   );
 
   return {

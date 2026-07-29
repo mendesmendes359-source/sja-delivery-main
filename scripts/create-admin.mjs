@@ -53,8 +53,14 @@ const env = {
   ...process.env,
 };
 
-const required = ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "ADMIN_EMAIL", "ADMIN_PASSWORD"];
-const missing = required.filter((key) => !env[key]);
+const supabaseUrl = env.SUPABASE_URL || env.VITE_SUPABASE_URL;
+const adminKey = env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_SECRET_KEY;
+const missing = [
+  ...(!supabaseUrl ? ["SUPABASE_URL ou VITE_SUPABASE_URL"] : []),
+  ...(!adminKey ? ["SUPABASE_SERVICE_ROLE_KEY ou SUPABASE_SECRET_KEY"] : []),
+  ...(!env.ADMIN_EMAIL ? ["ADMIN_EMAIL"] : []),
+  ...(!env.ADMIN_PASSWORD ? ["ADMIN_PASSWORD"] : []),
+];
 
 if (missing.length > 0) {
   console.error(`Faltam variáveis: ${missing.join(", ")}`);
@@ -69,9 +75,9 @@ if (env.ADMIN_PASSWORD.length < 8) {
   process.exit(1);
 }
 
-const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
+const supabase = createClient(supabaseUrl, adminKey, {
   global: {
-    fetch: createSupabaseFetch(env.SUPABASE_SERVICE_ROLE_KEY),
+    fetch: createSupabaseFetch(adminKey),
   },
   auth: {
     persistSession: false,

@@ -117,6 +117,7 @@ export const createOrder = createServerFn({ method: "POST" })
           total_cents,
         },
         "pendente",
+        supabasePublicServer,
       );
     } catch (error) {
       console.warn("[sms] erro ao notificar novo pedido", error);
@@ -137,10 +138,9 @@ export const updateOrderStatus = createServerFn({ method: "POST" })
     const { data: isStaff } = await context.supabase.rpc("is_staff", { _user_id: context.userId });
     if (!isStaff) throw new Error("Não autorizado");
 
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const select =
       "id, order_number, customer_name, customer_phone, order_type, status, total_cents";
-    const { data: currentOrder, error: currentError } = await supabaseAdmin
+    const { data: currentOrder, error: currentError } = await context.supabase
       .from("orders")
       .select(select)
       .eq("id", data.order_id)
@@ -153,7 +153,7 @@ export const updateOrderStatus = createServerFn({ method: "POST" })
       return { ...currentOrder, notifications: null, unchanged: true };
     }
 
-    const { data: order, error } = await supabaseAdmin
+    const { data: order, error } = await context.supabase
       .from("orders")
       .update({ status: data.status })
       .eq("id", data.order_id)
@@ -164,7 +164,7 @@ export const updateOrderStatus = createServerFn({ method: "POST" })
     let notifications = null;
     try {
       const { notifyOrderStage } = await import("@/lib/notifications.server");
-      notifications = await notifyOrderStage(order, data.status);
+      notifications = await notifyOrderStage(order, data.status, context.supabase);
     } catch (notificationError) {
       console.warn("[sms] erro ao notificar mudança de estado", notificationError);
     }
@@ -184,9 +184,8 @@ export const sendManualSms = createServerFn({ method: "POST" })
     const { data: isStaff } = await context.supabase.rpc("is_staff", { _user_id: context.userId });
     if (!isStaff) throw new Error("Não autorizado");
     const { sendSmsServer } = await import("@/lib/sms.server");
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const res = await sendSmsServer(data.to, data.body);
-    await supabaseAdmin.from("sms_logs").insert({
+    await context.supabase.from("sms_logs").insert({
       to_phone: data.to,
       body: data.body,
       status: res.ok ? "sent" : res.skipped ? "skipped" : "failed",
@@ -216,12 +215,11 @@ export const saveNotificationSettings = createServerFn({ method: "POST" })
     });
     if (!isAdmin) throw new Error("Apenas administradores podem alterar estas definições");
 
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const settings: NotificationSettings = {
       ...data,
       admin_phone: data.admin_phone || null,
     };
-    const { error } = await supabaseAdmin.from("sms_logs").insert({
+    const { error } = await context.supabase.from("sms_logs").insert({
       to_phone: NOTIFICATION_SETTINGS_PHONE,
       body: JSON.stringify(settings),
       status: "configuration",

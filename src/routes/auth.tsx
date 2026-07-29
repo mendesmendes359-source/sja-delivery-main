@@ -5,6 +5,10 @@ import { toast } from "sonner";
 import { BrandLogo } from "@/components/brand-logo";
 
 export const Route = createFileRoute("/auth")({
+  validateSearch: (search: Record<string, unknown>): { redirect?: string } => {
+    const redirect = sanitizeRedirect(search.redirect);
+    return redirect ? { redirect } : {};
+  },
   head: () => ({
     meta: [
       { title: "Área de gestão — SJA Fast Food" },
@@ -15,8 +19,22 @@ export const Route = createFileRoute("/auth")({
   component: AuthPage,
 });
 
+function sanitizeRedirect(value: unknown) {
+  return typeof value === "string" && value.startsWith("/") && !value.startsWith("//")
+    ? value
+    : null;
+}
+
+async function getAuthenticatedDestination(userId: string, requestedPath: string | null) {
+  const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", userId);
+
+  if (roles?.some((entry) => entry.role === "estafeta")) return "/estafeta";
+  return requestedPath?.startsWith("/admin") ? requestedPath : "/admin";
+}
+
 function AuthPage() {
   const navigate = useNavigate();
+  const requestedPath = Route.useSearch().redirect ?? null;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -26,23 +44,25 @@ function AuthPage() {
 
     supabase.auth.getSession().then(({ data }) => {
       if (active && data.session) {
-        navigate({ to: "/admin", replace: true });
+        getAuthenticatedDestination(data.session.user.id, requestedPath).then((to) => {
+          if (active) navigate({ to, replace: true });
+        });
       }
     });
 
     return () => {
       active = false;
     };
-  }, [navigate]);
+  }, [navigate, requestedPath]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
       toast.success("Sessão iniciada");
-      navigate({ to: "/admin" });
+      navigate({ to: await getAuthenticatedDestination(data.user.id, requestedPath) });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro");
     } finally {

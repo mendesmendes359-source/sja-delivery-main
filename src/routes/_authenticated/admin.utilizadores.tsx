@@ -2,7 +2,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { KeyRound, ShieldCheck, UserPlus, Users } from "lucide-react";
+import { Bike, KeyRound, ShieldCheck, UserPlus, Users } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/format";
 import {
@@ -13,7 +13,7 @@ import {
   updateManagedUserStatus,
 } from "@/lib/users.functions";
 
-type Role = "admin" | "staff";
+type Role = "admin" | "staff" | "estafeta";
 
 const emptyUser = {
   name: "",
@@ -93,6 +93,7 @@ function UsersAdmin() {
   const users = usersQuery.data ?? [];
   const activeUsers = users.filter((user) => user.active).length;
   const admins = users.filter((user) => user.role === "admin").length;
+  const couriers = users.filter((user) => user.role === "estafeta").length;
 
   return (
     <div className="space-y-6">
@@ -103,13 +104,14 @@ function UsersAdmin() {
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Summary icon={<Users className="h-4 w-4" />} label="Total" value={users.length} />
         <Summary
           icon={<ShieldCheck className="h-4 w-4" />}
           label="Administradores"
           value={admins}
         />
+        <Summary icon={<Bike className="h-4 w-4" />} label="Estafetas" value={couriers} />
         <Summary
           icon={<UserPlus className="h-4 w-4" />}
           label="Contas activas"
@@ -178,6 +180,7 @@ function UsersAdmin() {
                         >
                           <option value="admin">Administrador</option>
                           <option value="staff">Colaborador</option>
+                          <option value="estafeta">Estafeta</option>
                         </select>
                       </td>
                       <td className="px-4 py-3">
@@ -287,6 +290,7 @@ function UsersAdmin() {
                 className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm"
               >
                 <option value="staff">Colaborador</option>
+                <option value="estafeta">Estafeta</option>
                 <option value="admin">Administrador</option>
               </select>
             </Field>

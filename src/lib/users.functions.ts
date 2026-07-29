@@ -4,7 +4,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
 
-const roleSchema = z.enum(["admin", "staff"]);
+const roleSchema = z.enum(["admin", "staff", "estafeta"]);
 
 const createUserSchema = z.object({
   name: z.string().trim().min(2, "Indique o nome").max(100),

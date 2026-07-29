@@ -52,6 +52,10 @@ export const Route = createFileRoute("/_authenticated/admin")({
         ? "staff"
         : null;
 
+    if (!roleError && !role && roles?.some((entry) => entry.role === "estafeta")) {
+      throw redirect({ to: "/estafeta" });
+    }
+
     if (roleError || !role) {
       await supabase.auth.signOut();
       throw redirect({ to: "/auth" });

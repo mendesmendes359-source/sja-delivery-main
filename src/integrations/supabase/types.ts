@@ -34,6 +34,7 @@ export type Database = {
       };
       deliveries: {
         Row: {
+          courier_id: string | null;
           courier_name: string | null;
           created_at: string;
           delivered_at: string | null;
@@ -44,6 +45,7 @@ export type Database = {
           status: string;
         };
         Insert: {
+          courier_id?: string | null;
           courier_name?: string | null;
           created_at?: string;
           delivered_at?: string | null;
@@ -54,6 +56,7 @@ export type Database = {
           status?: string;
         };
         Update: {
+          courier_id?: string | null;
           courier_name?: string | null;
           created_at?: string;
           delivered_at?: string | null;
@@ -370,6 +373,13 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      assign_delivery: {
+        Args: {
+          p_courier_id: string;
+          p_order_id: string;
+        };
+        Returns: string;
+      };
       create_public_order: {
         Args: {
           p_address: string | null;
@@ -397,10 +407,35 @@ export type Database = {
         };
         Returns: boolean;
       };
+      is_assigned_courier: {
+        Args: {
+          _order_id: string;
+          _user_id: string;
+        };
+        Returns: boolean;
+      };
+      is_courier: {
+        Args: { _user_id: string };
+        Returns: boolean;
+      };
       is_staff: { Args: { _user_id: string }; Returns: boolean };
+      list_couriers: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          display_name: string;
+          user_id: string;
+        }[];
+      };
+      update_delivery_status: {
+        Args: {
+          p_delivery_id: string;
+          p_status: string;
+        };
+        Returns: string;
+      };
     };
     Enums: {
-      app_role: "admin" | "staff";
+      app_role: "admin" | "staff" | "estafeta";
       order_status:
         "pendente" | "aceite" | "em_preparacao" | "saiu_entrega" | "entregue" | "cancelado";
       order_type: "entrega" | "takeaway";
@@ -525,7 +560,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "staff"],
+      app_role: ["admin", "staff", "estafeta"],
       order_status: [
         "pendente",
         "aceite",

@@ -16,6 +16,7 @@ import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as MenuRouteImport } from './routes/menu'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as AuthenticatedEstafetaRouteImport } from './routes/_authenticated/estafeta'
 import { Route as PedidoIdRouteImport } from './routes/pedido.$id'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as AuthenticatedAdminEntregasRouteImport } from './routes/_authenticated/admin.entregas'
@@ -58,6 +59,11 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
 const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedEstafetaRoute = AuthenticatedEstafetaRouteImport.update({
+  id: '/estafeta',
+  path: '/estafeta',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const PedidoIdRoute = PedidoIdRouteImport.update({
@@ -117,6 +123,7 @@ export interface FileRoutesByFullPath {
   '/menu': typeof MenuRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
+  '/estafeta': typeof AuthenticatedEstafetaRoute
   '/pedido/$id': typeof PedidoIdRoute
   '/admin/entregas': typeof AuthenticatedAdminEntregasRoute
   '/admin/financeiro': typeof AuthenticatedAdminFinanceiroRoute
@@ -133,6 +140,7 @@ export interface FileRoutesByTo {
   '/checkout': typeof CheckoutRoute
   '/menu': typeof MenuRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/estafeta': typeof AuthenticatedEstafetaRoute
   '/pedido/$id': typeof PedidoIdRoute
   '/admin/entregas': typeof AuthenticatedAdminEntregasRoute
   '/admin/financeiro': typeof AuthenticatedAdminFinanceiroRoute
@@ -152,6 +160,7 @@ export interface FileRoutesById {
   '/menu': typeof MenuRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
+  '/_authenticated/estafeta': typeof AuthenticatedEstafetaRoute
   '/pedido/$id': typeof PedidoIdRoute
   '/_authenticated/admin/entregas': typeof AuthenticatedAdminEntregasRoute
   '/_authenticated/admin/financeiro': typeof AuthenticatedAdminFinanceiroRoute
@@ -171,6 +180,7 @@ export interface FileRouteTypes {
     | '/menu'
     | '/sitemap.xml'
     | '/admin'
+    | '/estafeta'
     | '/pedido/$id'
     | '/admin/entregas'
     | '/admin/financeiro'
@@ -187,6 +197,7 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/menu'
     | '/sitemap.xml'
+    | '/estafeta'
     | '/pedido/$id'
     | '/admin/entregas'
     | '/admin/financeiro'
@@ -205,6 +216,7 @@ export interface FileRouteTypes {
     | '/menu'
     | '/sitemap.xml'
     | '/_authenticated/admin'
+    | '/_authenticated/estafeta'
     | '/pedido/$id'
     | '/_authenticated/admin/entregas'
     | '/_authenticated/admin/financeiro'
@@ -275,6 +287,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/estafeta': {
+      id: '/_authenticated/estafeta'
+      path: '/estafeta'
+      fullPath: '/estafeta'
+      preLoaderRoute: typeof AuthenticatedEstafetaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/pedido/$id': {
@@ -370,10 +389,12 @@ const AuthenticatedAdminRouteWithChildren =
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
+  AuthenticatedEstafetaRoute: typeof AuthenticatedEstafetaRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
+  AuthenticatedEstafetaRoute: AuthenticatedEstafetaRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

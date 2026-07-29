@@ -370,6 +370,26 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      create_public_order: {
+        Args: {
+          p_address: string | null;
+          p_customer_name: string;
+          p_customer_phone: string;
+          p_items: Json;
+          p_notes: string | null;
+          p_order_type: Database["public"]["Enums"]["order_type"];
+        };
+        Returns: {
+          id: string;
+          order_number: string;
+          status: Database["public"]["Enums"]["order_status"];
+          total_cents: number;
+        }[];
+      };
+      get_public_order: {
+        Args: { p_order_id: string };
+        Returns: Json;
+      };
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"];

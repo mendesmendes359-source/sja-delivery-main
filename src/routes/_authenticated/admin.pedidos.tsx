@@ -7,6 +7,7 @@ import { formatMoney, formatDate, STATUS_LABEL } from "@/lib/format";
 import { useState } from "react";
 import { toast } from "sonner";
 import { ChevronRight, MapPin, Phone } from "lucide-react";
+import type { RouteLoaderArgs } from "@/router-context";
 import {
   Dialog,
   DialogContent,
@@ -32,7 +33,7 @@ const ordersQO = queryOptions({
 });
 
 export const Route = createFileRoute("/_authenticated/admin/pedidos")({
-  loader: ({ context }) => context.queryClient.ensureQueryData(ordersQO),
+  loader: ({ context }: RouteLoaderArgs) => context.queryClient.ensureQueryData(ordersQO),
   component: OrdersAdmin,
 });
 

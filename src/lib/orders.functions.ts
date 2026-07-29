@@ -12,96 +12,40 @@ const CartItemSchema = z.object({
   quantity: z.number().int().min(1).max(50),
 });
 
-const CreateOrderSchema = z.object({
-  customer_name: z.string().trim().min(2).max(100),
-  customer_phone: z.string().trim().min(6).max(20),
-  address: z.string().trim().max(300).optional().nullable(),
-  order_type: z.enum(["entrega", "takeaway"]),
-  notes: z.string().trim().max(500).optional().nullable(),
-  items: z.array(CartItemSchema).min(1).max(50),
-});
+const CreateOrderSchema = z
+  .object({
+    customer_name: z.string().trim().min(2).max(100),
+    customer_phone: z.string().trim().min(6).max(20),
+    address: z.string().trim().max(300).optional().nullable(),
+    order_type: z.enum(["entrega", "takeaway"]),
+    notes: z.string().trim().max(500).optional().nullable(),
+    items: z.array(CartItemSchema).min(1).max(50),
+  })
+  .superRefine((data, ctx) => {
+    if (data.order_type === "entrega" && (!data.address || data.address.length < 3)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["address"],
+        message: "A morada é obrigatória para entrega",
+      });
+    }
+  });
 
 export const createOrder = createServerFn({ method: "POST" })
   .validator((data: unknown) => CreateOrderSchema.parse(data))
   .handler(async ({ data }) => {
     const { supabasePublicServer } = await import("@/integrations/supabase/client.public-server");
 
-    // Fetch menu items to compute authoritative prices
-    const ids = data.items.map((i) => i.menu_item_id);
-    const { data: menu, error: menuErr } = await supabasePublicServer
-      .from("menu_items")
-      .select("id, name, price_cents, available")
-      .in("id", ids);
-    if (menuErr) throw new Error(menuErr.message);
-    if (!menu || menu.length === 0) throw new Error("Itens do menu inválidos");
-
-    const menuMap = new Map(menu.map((m) => [m.id, m]));
-    let total_cents = 0;
-    const itemRows = data.items.map((i) => {
-      const m = menuMap.get(i.menu_item_id);
-      if (!m) throw new Error("Item não encontrado");
-      if (!m.available) throw new Error(`"${m.name}" não está disponível`);
-      total_cents += m.price_cents * i.quantity;
-      return {
-        menu_item_id: m.id,
-        name_snapshot: m.name,
-        unit_price_cents: m.price_cents,
-        quantity: i.quantity,
-      };
+    const { data: createdOrders, error } = await supabasePublicServer.rpc("create_public_order", {
+      p_customer_name: data.customer_name,
+      p_customer_phone: data.customer_phone,
+      p_address: data.order_type === "entrega" ? (data.address ?? null) : null,
+      p_order_type: data.order_type,
+      p_notes: data.notes ?? null,
+      p_items: data.items,
     });
-
-    const { data: order, error: orderErr } = await supabasePublicServer
-      .from("orders")
-      .insert({
-        customer_name: data.customer_name,
-        customer_phone: data.customer_phone,
-        address: data.address ?? null,
-        order_type: data.order_type,
-        notes: data.notes ?? null,
-        total_cents,
-      })
-      .select("id, order_number, total_cents, status")
-      .single();
-    if (orderErr || !order) throw new Error(orderErr?.message ?? "Falhou criar pedido");
-
-    const { error: itemsErr } = await supabasePublicServer
-      .from("order_items")
-      .insert(itemRows.map((r) => ({ ...r, order_id: order.id })));
-    if (itemsErr) throw new Error(itemsErr.message);
-
-    // Decrement stock via ingredients (best-effort, no failure)
-    try {
-      const { data: recipes } = await supabasePublicServer
-        .from("menu_item_ingredients")
-        .select("menu_item_id, stock_item_id, quantity")
-        .in("menu_item_id", ids);
-      if (recipes && recipes.length) {
-        const decrements = new Map<string, number>();
-        for (const it of data.items) {
-          for (const r of recipes.filter((x) => x.menu_item_id === it.menu_item_id)) {
-            decrements.set(
-              r.stock_item_id,
-              (decrements.get(r.stock_item_id) ?? 0) + Number(r.quantity) * it.quantity,
-            );
-          }
-        }
-        for (const [stockId, qty] of decrements) {
-          const { data: cur } = await supabasePublicServer
-            .from("stock_items")
-            .select("quantity")
-            .eq("id", stockId)
-            .single();
-          if (cur) {
-            await supabasePublicServer
-              .from("stock_items")
-              .update({ quantity: Math.max(0, Number(cur.quantity) - qty) })
-              .eq("id", stockId);
-          }
-        }
-      }
-    } catch (e) {
-      console.warn("[stock] erro ao debitar", e);
-    }
+    const order = createdOrders?.[0];
+    if (error || !order) throw new Error(error?.message ?? "Falhou criar pedido");
 
     // Notify customer and administrator without blocking order creation.
     try {
@@ -114,7 +58,7 @@ export const createOrder = createServerFn({ method: "POST" })
           customer_phone: data.customer_phone,
           order_type: data.order_type,
           status: order.status,
-          total_cents,
+          total_cents: order.total_cents,
         },
         "pendente",
         supabasePublicServer,
@@ -123,7 +67,11 @@ export const createOrder = createServerFn({ method: "POST" })
       console.warn("[sms] erro ao notificar novo pedido", error);
     }
 
-    return { id: order.id, order_number: order.order_number, total_cents };
+    return {
+      id: order.id,
+      order_number: order.order_number,
+      total_cents: order.total_cents,
+    };
   });
 
 const UpdateStatusSchema = z.object({

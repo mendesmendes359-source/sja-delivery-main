@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 
 type ProductImageProps = {
@@ -18,11 +18,8 @@ export function ProductImage({
   eager = false,
   sizes,
 }: ProductImageProps) {
-  const [failed, setFailed] = useState(false);
-
-  useEffect(() => {
-    setFailed(false);
-  }, [src]);
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
+  const failed = Boolean(src && failedSrc === src);
 
   return (
     <div
@@ -39,7 +36,7 @@ export function ProductImage({
           decoding="async"
           fetchPriority={eager ? "high" : "auto"}
           sizes={sizes}
-          onError={() => setFailed(true)}
+          onError={() => setFailedSrc(src)}
           className={cn("h-full w-full object-cover", imageClassName)}
         />
       ) : (

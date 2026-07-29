@@ -34,6 +34,8 @@ import {
 import { cn } from "@/lib/utils";
 import { BrandLogo } from "@/components/brand-logo";
 
+type AdminRole = "admin" | "staff";
+
 export const Route = createFileRoute("/_authenticated/admin")({
   beforeLoad: async () => {
     const { data: userData, error: userError } = await supabase.auth.getUser();
@@ -44,7 +46,7 @@ export const Route = createFileRoute("/_authenticated/admin")({
       .select("role")
       .eq("user_id", userData.user.id);
 
-    const role = roles?.some((entry) => entry.role === "admin")
+    const role: AdminRole | null = roles?.some((entry) => entry.role === "admin")
       ? "admin"
       : roles?.some((entry) => entry.role === "staff")
         ? "staff"

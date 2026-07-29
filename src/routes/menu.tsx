@@ -7,6 +7,7 @@ import { formatMoney } from "@/lib/format";
 import { useCart } from "@/lib/cart";
 import { toast } from "sonner";
 import { Plus } from "lucide-react";
+import type { RouteLoaderArgs } from "@/router-context";
 
 const menuQO = queryOptions({
   queryKey: ["menu", "full"],
@@ -38,7 +39,7 @@ export const Route = createFileRoute("/menu")({
       { property: "og:description", content: "O menu completo do SJA Fast Food." },
     ],
   }),
-  loader: ({ context }) => {
+  loader: ({ context }: RouteLoaderArgs) => {
     context.queryClient.ensureQueryData(menuQO);
   },
   component: MenuPage,

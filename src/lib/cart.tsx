@@ -34,13 +34,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) setItems(JSON.parse(raw));
-    } catch {
-      localStorage.removeItem(STORAGE_KEY);
-    }
-    setHydrated(true);
+    const hydrationFrame = window.requestAnimationFrame(() => {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) setItems(JSON.parse(raw));
+      } catch {
+        localStorage.removeItem(STORAGE_KEY);
+      }
+      setHydrated(true);
+    });
+
+    return () => window.cancelAnimationFrame(hydrationFrame);
   }, []);
 
   useEffect(() => {

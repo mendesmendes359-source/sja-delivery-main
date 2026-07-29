@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { ProductImage } from "@/components/product-image";
 import { supabase } from "@/integrations/supabase/client";
 import { formatMoney } from "@/lib/format";
+import type { RouteLoaderArgs } from "@/router-context";
 
 type EditableMenuItem = {
   id?: string;
@@ -55,7 +56,7 @@ const menuAdminQO = queryOptions({
 });
 
 export const Route = createFileRoute("/_authenticated/admin/menu")({
-  loader: ({ context }) => context.queryClient.ensureQueryData(menuAdminQO),
+  loader: ({ context }: RouteLoaderArgs) => context.queryClient.ensureQueryData(menuAdminQO),
   component: MenuAdmin,
 });
 

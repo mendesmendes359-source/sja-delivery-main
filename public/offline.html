@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="pt-AO">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#1d3557" />
+    <title>Sem ligação — SJA Fast Food</title>
+    <style>
+      :root {
+        color: #1d3557;
+        background: #f7f8fa;
+        font-family:
+          Inter,
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        display: grid;
+        min-height: 100vh;
+        min-height: 100dvh;
+        margin: 0;
+        padding: 24px;
+        place-items: center;
+      }
+
+      main {
+        width: min(100%, 420px);
+        padding: 36px 28px;
+        border: 1px solid #e4e7ec;
+        border-radius: 24px;
+        background: #fff;
+        box-shadow: 0 20px 50px rgb(29 53 87 / 10%);
+        text-align: center;
+      }
+
+      img {
+        width: 104px;
+        height: 104px;
+      }
+
+      h1 {
+        margin: 22px 0 8px;
+        font-size: 1.65rem;
+        line-height: 1.2;
+      }
+
+      p {
+        margin: 0;
+        color: #667085;
+        line-height: 1.6;
+      }
+
+      button {
+        width: 100%;
+        margin-top: 26px;
+        padding: 13px 18px;
+        border: 0;
+        border-radius: 10px;
+        color: #fff;
+        background: #e63946;
+        font: inherit;
+        font-weight: 700;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <img src="/images/brand/sja-logo.png" alt="SJA Fast Food" width="104" height="104" />
+      <h1>Está sem ligação à internet</h1>
+      <p>Verifique a sua rede e tente novamente para consultar o menu ou acompanhar o pedido.</p>
+      <button type="button" onclick="window.location.reload()">Tentar novamente</button>
+    </main>
+  </body>
+</html>

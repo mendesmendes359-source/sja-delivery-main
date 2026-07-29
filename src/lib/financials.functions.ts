@@ -1,6 +1,16 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { Database } from "@/integrations/supabase/types";
+
+type FinancialOrder = Pick<
+  Database["public"]["Tables"]["orders"]["Row"],
+  "total_cents" | "status" | "created_at"
+>;
+type FinancialExpense = Pick<
+  Database["public"]["Tables"]["expenses"]["Row"],
+  "amount_cents" | "category" | "expense_date"
+>;
 
 const RangeSchema = z.object({
   from: z.string(), // ISO date
@@ -27,8 +37,8 @@ export const getFinancials = createServerFn({ method: "POST" })
         .lte("expense_date", data.to.slice(0, 10)),
     ]);
 
-    const orders = ordersRes.data ?? [];
-    const expenses = expensesRes.data ?? [];
+    const orders = (ordersRes.data ?? []) as FinancialOrder[];
+    const expenses = (expensesRes.data ?? []) as FinancialExpense[];
     const revenue_cents = orders
       .filter((o) => o.status === "entregue")
       .reduce((s, o) => s + o.total_cents, 0);

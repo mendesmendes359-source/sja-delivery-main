@@ -3,6 +3,7 @@ import { useSuspenseQuery, queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { formatMoney } from "@/lib/format";
 import { Banknote, ChevronRight, ClipboardList, Package, TrendingUp } from "lucide-react";
+import type { RouteLoaderArgs } from "@/router-context";
 
 const dashQO = queryOptions({
   queryKey: ["admin", "dash"],
@@ -30,7 +31,7 @@ const dashQO = queryOptions({
 });
 
 export const Route = createFileRoute("/_authenticated/admin/")({
-  loader: ({ context }) => context.queryClient.ensureQueryData(dashQO),
+  loader: ({ context }: RouteLoaderArgs) => context.queryClient.ensureQueryData(dashQO),
   component: Dashboard,
 });
 

@@ -11,6 +11,7 @@ import { useState } from "react";
 import { BellRing, CircleCheck, CircleX, Save, Send } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import type { RouteLoaderArgs } from "@/router-context";
 import {
   getSmsProviderStatus,
   saveNotificationSettings,
@@ -51,7 +52,7 @@ const smsQO = queryOptions({
 });
 
 export const Route = createFileRoute("/_authenticated/admin/sms")({
-  loader: ({ context }) => context.queryClient.ensureQueryData(smsQO),
+  loader: ({ context }: RouteLoaderArgs) => context.queryClient.ensureQueryData(smsQO),
   component: SmsPage,
 });
 

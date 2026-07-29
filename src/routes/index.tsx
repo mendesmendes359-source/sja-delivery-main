@@ -7,6 +7,7 @@ import { formatMoney } from "@/lib/format";
 import { useCart } from "@/lib/cart";
 import { toast } from "sonner";
 import { ArrowRight, Clock, MapPin, Truck } from "lucide-react";
+import type { RouteLoaderArgs } from "@/router-context";
 
 const featuredQO = queryOptions({
   queryKey: ["menu", "featured"],
@@ -39,7 +40,7 @@ export const Route = createFileRoute("/")({
       },
     ],
   }),
-  loader: ({ context }) => {
+  loader: ({ context }: RouteLoaderArgs) => {
     context.queryClient.ensureQueryData(featuredQO);
   },
   component: Home,

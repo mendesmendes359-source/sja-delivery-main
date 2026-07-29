@@ -11,7 +11,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
 import { formatMoney } from "@/lib/format";
+import type { RouteLoaderArgs } from "@/router-context";
 
 const stockQO = queryOptions({
   queryKey: ["admin", "stock"],
@@ -22,7 +24,7 @@ const stockQO = queryOptions({
   },
 });
 
-type StockItem = Awaited<ReturnType<typeof stockQO.queryFn>>[number];
+type StockItem = Database["public"]["Tables"]["stock_items"]["Row"];
 
 type StockForm = {
   id?: string;
@@ -42,7 +44,7 @@ const emptyStockForm: StockForm = {
 };
 
 export const Route = createFileRoute("/_authenticated/admin/stock")({
-  loader: ({ context }) => context.queryClient.ensureQueryData(stockQO),
+  loader: ({ context }: RouteLoaderArgs) => context.queryClient.ensureQueryData(stockQO),
   component: StockAdmin,
 });
 

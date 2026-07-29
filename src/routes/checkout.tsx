@@ -202,23 +202,29 @@ function Checkout() {
                 </div>
                 <div className="flex items-center gap-1">
                   <button
+                    type="button"
+                    aria-label={`Diminuir quantidade de ${i.name}`}
                     onClick={() => setQty(i.id, i.quantity - 1)}
                     className="grid h-7 w-7 place-items-center rounded border hover:bg-muted"
                   >
-                    <Minus className="h-3 w-3" />
+                    <Minus aria-hidden="true" className="h-3 w-3" />
                   </button>
                   <span className="w-6 text-center text-sm">{i.quantity}</span>
                   <button
+                    type="button"
+                    aria-label={`Aumentar quantidade de ${i.name}`}
                     onClick={() => setQty(i.id, i.quantity + 1)}
                     className="grid h-7 w-7 place-items-center rounded border hover:bg-muted"
                   >
-                    <Plus className="h-3 w-3" />
+                    <Plus aria-hidden="true" className="h-3 w-3" />
                   </button>
                   <button
+                    type="button"
+                    aria-label={`Remover ${i.name} do pedido`}
                     onClick={() => remove(i.id)}
                     className="ml-1 grid h-7 w-7 place-items-center rounded text-muted-foreground hover:text-brand"
                   >
-                    <Trash2 className="h-3 w-3" />
+                    <Trash2 aria-hidden="true" className="h-3 w-3" />
                   </button>
                 </div>
               </li>

@@ -4,24 +4,46 @@ import { supabase } from "@/integrations/supabase/client";
 import { SiteFooter, SiteHeader } from "@/components/site-chrome";
 import { formatMoney, formatDate, STATUS_LABEL, STATUS_ORDER } from "@/lib/format";
 import { Check } from "lucide-react";
-import { useEffect } from "react";
+import type { RouteLoaderArgs } from "@/router-context";
+import { z } from "zod";
+
+const PublicOrderPayloadSchema = z.object({
+  order: z.object({
+    id: z.string().uuid(),
+    order_number: z.string(),
+    customer_name: z.string(),
+    status: z.enum([
+      "pendente",
+      "aceite",
+      "em_preparacao",
+      "saiu_entrega",
+      "entregue",
+      "cancelado",
+    ]),
+    total_cents: z.number().int(),
+    order_type: z.enum(["entrega", "takeaway"]),
+    address: z.string().nullable(),
+    notes: z.string().nullable(),
+    created_at: z.string(),
+  }),
+  items: z.array(
+    z.object({
+      id: z.string().uuid(),
+      name_snapshot: z.string(),
+      quantity: z.number().int(),
+      unit_price_cents: z.number().int(),
+    }),
+  ),
+});
 
 const orderQO = (id: string) =>
   queryOptions({
     queryKey: ["order", id],
     queryFn: async () => {
-      const { data: order, error } = await supabase
-        .from("orders")
-        .select("id, order_number, customer_name, status, total_cents, order_type, address, notes, created_at")
-        .eq("id", id)
-        .maybeSingle();
+      const { data, error } = await supabase.rpc("get_public_order", { p_order_id: id });
       if (error) throw error;
-      if (!order) throw notFound();
-      const { data: items } = await supabase
-        .from("order_items")
-        .select("id, name_snapshot, quantity, unit_price_cents")
-        .eq("order_id", id);
-      return { order, items: items ?? [] };
+      if (!data) throw notFound();
+      return PublicOrderPayloadSchema.parse(data);
     },
     refetchInterval: 15000,
   });
@@ -34,27 +56,17 @@ export const Route = createFileRoute("/pedido/$id")({
       { name: "robots", content: "noindex" },
     ],
   }),
-  loader: ({ params, context }) => context.queryClient.ensureQueryData(orderQO(params.id)),
+  loader: ({ params, context }: RouteLoaderArgs<{ id: string }>) =>
+    context.queryClient.ensureQueryData(orderQO(params.id)),
   component: OrderPage,
 });
 
 function OrderPage() {
   const { id } = Route.useParams();
-  const { data, refetch } = useSuspenseQuery(orderQO(id));
-  useEffect(() => {
-    const ch = supabase
-      .channel(`order-${id}`)
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "orders", filter: `id=eq.${id}` }, () => {
-        refetch();
-      })
-      .subscribe();
-    return () => {
-      supabase.removeChannel(ch);
-    };
-  }, [id, refetch]);
+  const { data } = useSuspenseQuery(orderQO(id));
 
   const { order, items } = data;
-  const idx = STATUS_ORDER.indexOf(order.status as (typeof STATUS_ORDER)[number]);
+  const idx = order.status === "cancelado" ? -1 : STATUS_ORDER.indexOf(order.status);
   const cancelled = order.status === "cancelado";
 
   return (
@@ -84,7 +96,9 @@ function OrderPage() {
                       >
                         {done ? <Check className="h-4 w-4" /> : i + 1}
                       </div>
-                      <div className={`mt-2 text-[11px] font-medium ${done ? "text-navy" : "text-muted-foreground"}`}>
+                      <div
+                        className={`mt-2 text-[11px] font-medium ${done ? "text-navy" : "text-muted-foreground"}`}
+                      >
                         {STATUS_LABEL[s]}
                       </div>
                     </div>
@@ -119,9 +133,20 @@ function OrderPage() {
           </div>
 
           <div className="mt-4 grid gap-2 text-sm text-muted-foreground">
-            <div><strong className="text-foreground">Tipo:</strong> {order.order_type === "entrega" ? "Entrega ao domicílio" : "Take-away"}</div>
-            {order.address && <div><strong className="text-foreground">Morada:</strong> {order.address}</div>}
-            {order.notes && <div><strong className="text-foreground">Notas:</strong> {order.notes}</div>}
+            <div>
+              <strong className="text-foreground">Tipo:</strong>{" "}
+              {order.order_type === "entrega" ? "Entrega ao domicílio" : "Take-away"}
+            </div>
+            {order.address && (
+              <div>
+                <strong className="text-foreground">Morada:</strong> {order.address}
+              </div>
+            )}
+            {order.notes && (
+              <div>
+                <strong className="text-foreground">Notas:</strong> {order.notes}
+              </div>
+            )}
           </div>
 
           <div className="mt-6">

@@ -194,6 +194,10 @@ function DeliveriesAdmin() {
           const deliveryTime =
             timeSelections[order.id] ?? toTimeInputValue(order.estimated_delivery_at);
           const [deliveryHour = "", deliveryMinute = ""] = deliveryTime.split(":");
+          const deliveryFeeInput =
+            feeSelections[order.id] ?? String(order.delivery_fee_cents / 100);
+          const previewDeliveryFeeCents = getDeliveryFeePreviewCents(deliveryFeeInput);
+          const previewTotalCents = order.subtotal_cents + previewDeliveryFeeCents;
 
           return (
             <Dialog
@@ -360,7 +364,7 @@ function DeliveriesAdmin() {
                         min="0"
                         max="1000000"
                         step="1"
-                        value={feeSelections[order.id] ?? String(order.delivery_fee_cents / 100)}
+                        value={deliveryFeeInput}
                         disabled={order.status === "entregue" || termsMutation.isPending}
                         onChange={(event) =>
                           setFeeSelections((current) => ({
@@ -405,6 +409,32 @@ function DeliveriesAdmin() {
                     </button>
                   </div>
 
+                  <div className="mt-4 rounded-xl border bg-muted/30 p-4">
+                    <div className="grid grid-cols-3 gap-3 text-sm">
+                      <div>
+                        <div className="text-xs text-muted-foreground">Produtos</div>
+                        <div className="mt-1 font-semibold">
+                          {formatMoney(order.subtotal_cents)}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-muted-foreground">Entrega</div>
+                        <div className="mt-1 font-semibold">
+                          {formatMoney(previewDeliveryFeeCents)}
+                        </div>
+                      </div>
+                      <div className="border-l pl-3 text-right">
+                        <div className="text-xs text-muted-foreground">Total da encomenda</div>
+                        <div className="mt-1 font-bold text-brand">
+                          {formatMoney(previewTotalCents)}
+                        </div>
+                      </div>
+                    </div>
+                    <p className="mt-3 border-t pt-3 text-xs text-muted-foreground">
+                      O preço da entrega é somado automaticamente ao valor dos produtos.
+                    </p>
+                  </div>
+
                   <button
                     type="button"
                     disabled={
@@ -415,8 +445,7 @@ function DeliveriesAdmin() {
                     onClick={() =>
                       termsMutation.mutate({
                         orderId: order.id,
-                        deliveryFeeKz:
-                          feeSelections[order.id] ?? String(order.delivery_fee_cents / 100),
+                        deliveryFeeKz: deliveryFeeInput,
                         deliveryTime,
                         orderCreatedAt: order.created_at,
                         lockedEstimate: order.estimated_delivery_at,
@@ -507,6 +536,12 @@ function DeliveriesAdmin() {
 
 function showError(error: unknown) {
   toast.error(error instanceof Error ? error.message : "Não foi possível atualizar a entrega");
+}
+
+function getDeliveryFeePreviewCents(value: string) {
+  const amount = Number(value);
+  if (!Number.isFinite(amount) || amount < 0) return 0;
+  return Math.round(amount * 100);
 }
 
 function createDeliveryDateTime(orderCreatedAt: string, time: string) {

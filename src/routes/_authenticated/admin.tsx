@@ -6,6 +6,7 @@ import {
   useNavigate,
   useRouterState,
 } from "@tanstack/react-router";
+import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
   LayoutDashboard,
@@ -36,27 +37,43 @@ import { BrandLogo } from "@/components/brand-logo";
 
 type AdminRole = "admin" | "staff";
 
+const adminAccessQO = (userId: string) =>
+  queryOptions({
+    queryKey: ["auth", "admin-access", userId],
+    queryFn: async () => {
+      const { data: roles, error } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userId);
+
+      if (error) throw error;
+
+      const role: AdminRole | null = roles.some((entry) => entry.role === "admin")
+        ? "admin"
+        : roles.some((entry) => entry.role === "staff")
+          ? "staff"
+          : null;
+
+      return {
+        role,
+        isCourier: roles.some((entry) => entry.role === "estafeta"),
+      };
+    },
+    staleTime: 5 * 60 * 1000,
+    retry: 2,
+  });
+
 export const Route = createFileRoute("/_authenticated/admin")({
-  beforeLoad: async () => {
-    const { data: userData, error: userError } = await supabase.auth.getUser();
-    if (userError || !userData.user) throw redirect({ to: "/auth" });
+  beforeLoad: async ({ context }) => {
+    const { role, isCourier } = await context.queryClient.fetchQuery(
+      adminAccessQO(context.user.id),
+    );
 
-    const { data: roles, error: roleError } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userData.user.id);
-
-    const role: AdminRole | null = roles?.some((entry) => entry.role === "admin")
-      ? "admin"
-      : roles?.some((entry) => entry.role === "staff")
-        ? "staff"
-        : null;
-
-    if (!roleError && !role && roles?.some((entry) => entry.role === "estafeta")) {
+    if (!role && isCourier) {
       throw redirect({ to: "/estafeta" });
     }
 
-    if (roleError || !role) {
+    if (!role) {
       await supabase.auth.signOut();
       throw redirect({ to: "/auth" });
     }

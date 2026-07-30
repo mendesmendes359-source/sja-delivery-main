@@ -139,6 +139,9 @@ function Checkout() {
                       className="mr-2"
                     />
                     <strong>Entrega</strong> ao domicílio
+                    <span className="mt-1 block text-xs text-muted-foreground">
+                      O preço e o horário serão definidos para este pedido pela equipa.
+                    </span>
                   </label>
                   <label
                     className={`cursor-pointer rounded-lg border p-4 text-sm ${type === "takeaway" ? "border-brand bg-accent" : ""}`}
@@ -239,9 +242,21 @@ function Checkout() {
             ))}
             {items.length === 0 && <li className="text-sm text-muted-foreground">Sem itens.</li>}
           </ul>
-          <div className="mt-4 flex items-center justify-between border-t pt-4 font-semibold">
-            <span>Total</span>
-            <span className="font-display text-lg text-navy">{formatMoney(total_cents)}</span>
+          <div className="mt-4 space-y-2 border-t pt-4 text-sm">
+            <div className="flex items-center justify-between text-muted-foreground">
+              <span>Produtos</span>
+              <span>{formatMoney(total_cents)}</span>
+            </div>
+            {type === "entrega" ? (
+              <div className="flex items-center justify-between text-muted-foreground">
+                <span>Taxa de entrega</span>
+                <span className="font-medium text-amber-700">A definir</span>
+              </div>
+            ) : null}
+            <div className="flex items-center justify-between border-t pt-2 font-semibold">
+              <span>{type === "entrega" ? "Subtotal atual" : "Total"}</span>
+              <span className="font-display text-lg text-navy">{formatMoney(total_cents)}</span>
+            </div>
           </div>
         </aside>
       </div>

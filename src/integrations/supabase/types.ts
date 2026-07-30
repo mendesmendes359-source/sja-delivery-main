@@ -238,11 +238,14 @@ export type Database = {
           created_at: string;
           customer_name: string;
           customer_phone: string;
+          delivery_fee_cents: number;
+          estimated_delivery_at: string | null;
           id: string;
           notes: string | null;
           order_number: string;
           order_type: Database["public"]["Enums"]["order_type"];
           status: Database["public"]["Enums"]["order_status"];
+          subtotal_cents: number;
           total_cents: number;
           updated_at: string;
         };
@@ -252,11 +255,14 @@ export type Database = {
           created_at?: string;
           customer_name: string;
           customer_phone: string;
+          delivery_fee_cents?: number;
+          estimated_delivery_at?: string | null;
           id?: string;
           notes?: string | null;
           order_number?: string;
           order_type?: Database["public"]["Enums"]["order_type"];
           status?: Database["public"]["Enums"]["order_status"];
+          subtotal_cents?: number;
           total_cents?: number;
           updated_at?: string;
         };
@@ -266,11 +272,14 @@ export type Database = {
           created_at?: string;
           customer_name?: string;
           customer_phone?: string;
+          delivery_fee_cents?: number;
+          estimated_delivery_at?: string | null;
           id?: string;
           notes?: string | null;
           order_number?: string;
           order_type?: Database["public"]["Enums"]["order_type"];
           status?: Database["public"]["Enums"]["order_status"];
+          subtotal_cents?: number;
           total_cents?: number;
           updated_at?: string;
         };
@@ -428,6 +437,14 @@ export type Database = {
           display_name: string;
           user_id: string;
         }[];
+      };
+      set_order_delivery_terms: {
+        Args: {
+          p_delivery_fee_cents: number;
+          p_estimated_delivery_at: string;
+          p_order_id: string;
+        };
+        Returns: string;
       };
       update_delivery_status: {
         Args: {

@@ -13,7 +13,7 @@ const courierDeliveriesQO = queryOptions({
     const { data, error } = await supabase
       .from("deliveries")
       .select(
-        "id, status, dispatched_at, delivered_at, created_at, orders!inner(id, order_number, customer_name, customer_phone, address, notes, status, total_cents, created_at)",
+        "id, status, dispatched_at, delivered_at, created_at, orders!inner(id, order_number, customer_name, customer_phone, address, notes, status, total_cents, estimated_delivery_at, created_at)",
       )
       .order("created_at", { ascending: false });
 
@@ -174,6 +174,21 @@ function CourierArea() {
                     </div>
                   ) : null}
 
+                  {order.estimated_delivery_at && !isCancelled ? (
+                    <div className="mt-3 flex items-center gap-2 rounded-md bg-accent p-3 text-sm text-brand">
+                      <Clock3 className="h-4 w-4 shrink-0" aria-hidden="true" />
+                      <span>
+                        Horário definido: <strong>{formatDate(order.estimated_delivery_at)}</strong>
+                      </span>
+                    </div>
+                  ) : null}
+
+                  {!order.estimated_delivery_at && !isCancelled ? (
+                    <div className="mt-3 rounded-md bg-amber-50 p-3 text-sm font-medium text-amber-800">
+                      Preço e horário ainda não definidos pela gestão.
+                    </div>
+                  ) : null}
+
                   <div className="mt-4 flex items-center justify-between border-t pt-4">
                     <div>
                       <div className="font-semibold">{formatMoney(order.total_cents)}</div>
@@ -185,7 +200,12 @@ function CourierArea() {
                     {!isCancelled && delivery.status === "atribuido" ? (
                       <button
                         type="button"
-                        disabled={statusMutation.isPending}
+                        disabled={statusMutation.isPending || !order.estimated_delivery_at}
+                        title={
+                          order.estimated_delivery_at
+                            ? undefined
+                            : "A gestão deve definir o preço e o horário primeiro"
+                        }
                         onClick={() =>
                           statusMutation.mutate({
                             deliveryId: delivery.id,

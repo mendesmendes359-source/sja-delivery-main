@@ -16,6 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { AppSelect } from "@/components/ui/app-select";
 
 const ordersQO = queryOptions({
   queryKey: ["admin", "orders"],
@@ -23,7 +24,7 @@ const ordersQO = queryOptions({
     const { data, error } = await supabase
       .from("orders")
       .select(
-        "id, order_number, customer_name, customer_phone, address, status, cancellation_reason, order_type, total_cents, notes, created_at",
+        "id, order_number, customer_name, customer_phone, address, status, cancellation_reason, order_type, subtotal_cents, delivery_fee_cents, total_cents, estimated_delivery_at, notes, created_at",
       )
       .order("created_at", { ascending: false })
       .limit(100);
@@ -55,6 +56,13 @@ const STATUS_STYLES: Record<(typeof STATUSES)[number], string> = {
   entregue: "bg-emerald-100 text-emerald-800",
   cancelado: "bg-red-100 text-red-800",
 };
+
+const STATUS_OPTIONS = STATUSES.map((status) => ({
+  value: status,
+  label: STATUS_LABEL[status],
+}));
+
+const FILTER_OPTIONS = [{ value: "todos", label: "Todos" }, ...STATUS_OPTIONS];
 
 function OrdersAdmin() {
   const { data } = useSuspenseQuery(ordersQO);
@@ -125,18 +133,13 @@ function OrdersAdmin() {
           <h1 className="font-display text-3xl font-bold">Pedidos</h1>
           <p className="text-sm text-muted-foreground">Últimos 100 pedidos</p>
         </div>
-        <select
+        <AppSelect
           value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-          className="rounded-md border bg-background px-3 py-2 text-sm"
-        >
-          <option value="todos">Todos</option>
-          {STATUSES.map((s) => (
-            <option key={s} value={s}>
-              {STATUS_LABEL[s]}
-            </option>
-          ))}
-        </select>
+          onValueChange={setFilter}
+          options={FILTER_OPTIONS}
+          ariaLabel="Filtrar pedidos por estado"
+          className="w-48"
+        />
       </div>
       <div className="space-y-3 md:hidden">
         {filtered.map((order) => (
@@ -212,20 +215,17 @@ function OrdersAdmin() {
                   {formatDate(o.created_at)}
                 </td>
                 <td className="px-4 py-2">
-                  <select
+                  <AppSelect
                     value={o.status}
                     disabled={mut.isPending}
-                    onChange={(e) =>
-                      requestStatusChange(o, e.target.value as (typeof STATUSES)[number])
+                    onValueChange={(status) =>
+                      requestStatusChange(o, status as (typeof STATUSES)[number])
                     }
-                    className="rounded-md border bg-background px-2 py-1 text-xs"
-                  >
-                    {STATUSES.map((s) => (
-                      <option key={s} value={s}>
-                        {STATUS_LABEL[s]}
-                      </option>
-                    ))}
-                  </select>
+                    options={STATUS_OPTIONS}
+                    ariaLabel={`Estado do pedido ${o.order_number}`}
+                    size="sm"
+                    className="min-w-36"
+                  />
                   {o.status === "cancelado" && o.cancellation_reason ? (
                     <div className="mt-2 max-w-52 text-xs text-red-700">
                       <p>{o.cancellation_reason}</p>
@@ -303,8 +303,27 @@ function OrdersAdmin() {
                   <p className="mt-1 text-sm font-semibold">
                     {formatMoney(selectedOrder.total_cents)}
                   </p>
+                  {selectedOrder.order_type === "entrega" ? (
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Taxa:{" "}
+                      {selectedOrder.estimated_delivery_at
+                        ? formatMoney(selectedOrder.delivery_fee_cents)
+                        : "por definir"}
+                    </p>
+                  ) : null}
                 </div>
               </section>
+
+              {selectedOrder.estimated_delivery_at && selectedOrder.order_type === "entrega" ? (
+                <section className="rounded-xl border p-3 text-sm">
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Entrega marcada
+                  </p>
+                  <p className="mt-1 font-semibold">
+                    {formatDate(selectedOrder.estimated_delivery_at)}
+                  </p>
+                </section>
+              ) : null}
 
               {selectedOrder.notes ? (
                 <section>
@@ -333,23 +352,17 @@ function OrdersAdmin() {
 
               <label className="block text-sm font-medium">
                 Estado do pedido
-                <select
+                <AppSelect
                   value={selectedOrder.status}
                   disabled={mut.isPending}
-                  onChange={(event) =>
-                    requestStatusChange(
-                      selectedOrder,
-                      event.target.value as (typeof STATUSES)[number],
-                    )
+                  onValueChange={(status) =>
+                    requestStatusChange(selectedOrder, status as (typeof STATUSES)[number])
                   }
-                  className="mt-2 w-full rounded-xl border bg-background px-3 py-3 text-sm"
-                >
-                  {STATUSES.map((status) => (
-                    <option key={status} value={status}>
-                      {STATUS_LABEL[status]}
-                    </option>
-                  ))}
-                </select>
+                  options={STATUS_OPTIONS}
+                  ariaLabel={`Estado do pedido ${selectedOrder.order_number}`}
+                  size="lg"
+                  className="mt-2"
+                />
               </label>
 
               <div

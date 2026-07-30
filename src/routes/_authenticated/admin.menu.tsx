@@ -4,6 +4,7 @@ import { useState, type ChangeEvent } from "react";
 import { ImagePlus, LoaderCircle, Pencil, Plus, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { ProductImage } from "@/components/product-image";
+import { AppSelect } from "@/components/ui/app-select";
 import { supabase } from "@/integrations/supabase/client";
 import { formatMoney } from "@/lib/format";
 import type { RouteLoaderArgs } from "@/router-context";
@@ -62,6 +63,10 @@ export const Route = createFileRoute("/_authenticated/admin/menu")({
 
 function MenuAdmin() {
   const { data } = useSuspenseQuery(menuAdminQO);
+  const categoryOptions = data.categories.map((category) => ({
+    value: category.id,
+    label: category.name,
+  }));
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState<EditableMenuItem | null>(null);
   const [editingCategory, setEditingCategory] = useState<EditableCategory | null>(null);
@@ -512,20 +517,18 @@ function MenuAdmin() {
                 </div>
                 <label className="text-sm">
                   Categoria
-                  <select
+                  <AppSelect
                     required
+                    name="category_id"
                     value={editing.category_id ?? ""}
-                    onChange={(event) =>
-                      setEditing({ ...editing, category_id: event.target.value })
+                    onValueChange={(categoryId) =>
+                      setEditing({ ...editing, category_id: categoryId })
                     }
-                    className="mt-1 w-full rounded border bg-background px-3 py-2 text-sm"
-                  >
-                    {data.categories.map((category) => (
-                      <option key={category.id} value={category.id}>
-                        {category.name}
-                      </option>
-                    ))}
-                  </select>
+                    options={categoryOptions}
+                    ariaLabel="Categoria do produto"
+                    placeholder="Escolher categoria"
+                    className="mt-1"
+                  />
                 </label>
                 <label className="flex items-center gap-2 rounded-lg border p-3 text-sm">
                   <input

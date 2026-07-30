@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { History, RefreshCw, Trash2 } from "lucide-react";
+import { Clock3, History, RefreshCw, Trash2 } from "lucide-react";
 import { SiteFooter, SiteHeader } from "@/components/site-chrome";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDate, formatMoney, STATUS_LABEL } from "@/lib/format";
@@ -150,6 +150,33 @@ function OrderHistoryPage() {
                       <span className="font-semibold">Motivo: </span>
                       {order.cancellation_reason}
                     </div>
+                  ) : null}
+
+                  {order?.order_type === "entrega" &&
+                  order.estimated_delivery_at &&
+                  status !== "cancelado" &&
+                  status !== "entregue" ? (
+                    <div className="mt-4 flex items-center gap-2 rounded-xl bg-blue-50 p-3 text-sm text-blue-900">
+                      <Clock3 aria-hidden="true" className="h-4 w-4 shrink-0" />
+                      <span>
+                        Entrega marcada: <strong>{formatDate(order.estimated_delivery_at)}</strong>
+                      </span>
+                    </div>
+                  ) : null}
+
+                  {order?.order_type === "entrega" &&
+                  !order.estimated_delivery_at &&
+                  status !== "cancelado" &&
+                  status !== "entregue" ? (
+                    <p className="mt-3 rounded-xl bg-amber-50 p-3 text-xs font-medium text-amber-800">
+                      Preço e horário desta entrega ainda por definir.
+                    </p>
+                  ) : null}
+
+                  {order?.order_type === "entrega" && order.delivery_fee_cents > 0 ? (
+                    <p className="mt-3 text-xs text-muted-foreground">
+                      Inclui {formatMoney(order.delivery_fee_cents)} de taxa de entrega.
+                    </p>
                   ) : null}
 
                   <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t pt-4">

@@ -6,7 +6,7 @@ import { SiteFooter, SiteHeader } from "@/components/site-chrome";
 import { formatMoney, formatDate, STATUS_LABEL, STATUS_ORDER } from "@/lib/format";
 import { saveOrderHistoryEntry } from "@/lib/order-history";
 import { PublicOrderPayloadSchema } from "@/lib/public-order";
-import { Check } from "lucide-react";
+import { Check, Clock3 } from "lucide-react";
 import type { RouteLoaderArgs } from "@/router-context";
 
 const orderQO = (id: string) =>
@@ -41,6 +41,7 @@ function OrderPage() {
   const { order, items } = data;
   const idx = order.status === "cancelado" ? -1 : STATUS_ORDER.indexOf(order.status);
   const cancelled = order.status === "cancelado";
+  const deliveryTermsDefined = Boolean(order.estimated_delivery_at);
 
   useEffect(() => {
     saveOrderHistoryEntry({
@@ -106,6 +107,34 @@ function OrderPage() {
             </div>
           ) : null}
 
+          {order.order_type === "entrega" &&
+          order.estimated_delivery_at &&
+          !cancelled &&
+          order.status !== "entregue" ? (
+            <div className="mt-6 flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4 text-blue-900">
+              <Clock3 className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide">Entrega marcada</p>
+                <p className="mt-1 font-medium">{formatDate(order.estimated_delivery_at)}</p>
+                <p className="mt-1 text-xs text-blue-700">
+                  Este horário é definitivo e não pode ser alterado.
+                </p>
+              </div>
+            </div>
+          ) : null}
+
+          {order.order_type === "entrega" &&
+          !deliveryTermsDefined &&
+          !cancelled &&
+          order.status !== "entregue" ? (
+            <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-900">
+              <p className="text-xs font-semibold uppercase tracking-wide">Entrega em definição</p>
+              <p className="mt-1 text-sm">
+                A equipa ainda vai indicar o preço e o horário específicos deste pedido.
+              </p>
+            </div>
+          ) : null}
+
           <div className="mt-8 rounded-lg border p-4">
             <h2 className="font-semibold">Itens</h2>
             <ul className="mt-2 divide-y">
@@ -118,9 +147,27 @@ function OrderPage() {
                 </li>
               ))}
             </ul>
-            <div className="mt-3 flex justify-between border-t pt-3 font-semibold">
-              <span>Total</span>
-              <span className="text-navy">{formatMoney(order.total_cents)}</span>
+            <div className="mt-3 space-y-2 border-t pt-3 text-sm">
+              <div className="flex justify-between text-muted-foreground">
+                <span>Produtos</span>
+                <span>{formatMoney(order.subtotal_cents)}</span>
+              </div>
+              {order.order_type === "entrega" ? (
+                <div className="flex justify-between text-muted-foreground">
+                  <span>Taxa de entrega</span>
+                  <span>
+                    {deliveryTermsDefined ? formatMoney(order.delivery_fee_cents) : "A definir"}
+                  </span>
+                </div>
+              ) : null}
+              <div className="flex justify-between border-t pt-2 font-semibold">
+                <span>
+                  {order.order_type === "entrega" && !deliveryTermsDefined
+                    ? "Subtotal atual"
+                    : "Total"}
+                </span>
+                <span className="text-navy">{formatMoney(order.total_cents)}</span>
+              </div>
             </div>
           </div>
 

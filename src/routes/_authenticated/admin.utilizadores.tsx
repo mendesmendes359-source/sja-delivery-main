@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { Bike, KeyRound, ShieldCheck, UserPlus, Users } from "lucide-react";
 import { toast } from "sonner";
+import { AppSelect } from "@/components/ui/app-select";
 import { formatDate } from "@/lib/format";
 import {
   createManagedUser,
@@ -21,6 +22,12 @@ const emptyUser = {
   password: "",
   role: "staff" as Role,
 };
+
+const ROLE_OPTIONS = [
+  { value: "staff", label: "Colaborador" },
+  { value: "estafeta", label: "Estafeta" },
+  { value: "admin", label: "Administrador" },
+] as const;
 
 export const Route = createFileRoute("/_authenticated/admin/utilizadores")({
   beforeLoad: ({ context }: { context: { role?: "admin" | "staff" } }) => {
@@ -166,22 +173,20 @@ function UsersAdmin() {
                         <div className="text-xs text-muted-foreground">{user.email}</div>
                       </td>
                       <td className="px-4 py-3">
-                        <select
-                          aria-label={`Função de ${user.email}`}
+                        <AppSelect
                           value={user.role ?? "staff"}
                           disabled={user.isCurrentUser || roleMutation.isPending}
-                          onChange={(event) =>
+                          onValueChange={(role) =>
                             roleMutation.mutate({
                               userId: user.id,
-                              role: event.target.value as Role,
+                              role: role as Role,
                             })
                           }
-                          className="rounded-md border bg-background px-2 py-1.5 text-xs disabled:opacity-60"
-                        >
-                          <option value="admin">Administrador</option>
-                          <option value="staff">Colaborador</option>
-                          <option value="estafeta">Estafeta</option>
-                        </select>
+                          options={ROLE_OPTIONS}
+                          ariaLabel={`Função de ${user.email}`}
+                          size="sm"
+                          className="min-w-36"
+                        />
                       </td>
                       <td className="px-4 py-3">
                         <span
@@ -284,15 +289,13 @@ function UsersAdmin() {
               />
             </Field>
             <Field label="Função">
-              <select
+              <AppSelect
                 value={newUser.role}
-                onChange={(event) => setNewUser({ ...newUser, role: event.target.value as Role })}
-                className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm"
-              >
-                <option value="staff">Colaborador</option>
-                <option value="estafeta">Estafeta</option>
-                <option value="admin">Administrador</option>
-              </select>
+                onValueChange={(role) => setNewUser({ ...newUser, role: role as Role })}
+                options={ROLE_OPTIONS}
+                ariaLabel="Função do novo utilizador"
+                className="mt-1"
+              />
             </Field>
             <button
               type="submit"

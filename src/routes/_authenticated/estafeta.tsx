@@ -185,7 +185,7 @@ function CourierArea() {
 
                   {!order.estimated_delivery_at && !isCancelled ? (
                     <div className="mt-3 rounded-md bg-amber-50 p-3 text-sm font-medium text-amber-800">
-                      Preço e horário ainda não definidos pela gestão.
+                      Horário ainda não definido pela gestão. A taxa já está incluída no total.
                     </div>
                   ) : null}
 

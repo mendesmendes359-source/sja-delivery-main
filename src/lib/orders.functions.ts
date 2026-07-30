@@ -18,6 +18,7 @@ const CreateOrderSchema = z
     customer_phone: z.string().trim().min(6).max(20),
     address: z.string().trim().max(300).optional().nullable(),
     order_type: z.enum(["entrega", "takeaway"]),
+    delivery_zone_id: z.string().uuid().optional().nullable(),
     notes: z.string().trim().max(500).optional().nullable(),
     items: z.array(CartItemSchema).min(1).max(50),
   })
@@ -29,7 +30,27 @@ const CreateOrderSchema = z
         message: "A morada é obrigatória para entrega",
       });
     }
+    if (data.order_type === "entrega" && !data.delivery_zone_id) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["delivery_zone_id"],
+        message: "Selecione a sua localização de entrega",
+      });
+    }
   });
+
+export const listActiveDeliveryZones = createServerFn({ method: "GET" }).handler(async () => {
+  const { supabasePublicServer } = await import("@/integrations/supabase/client.public-server");
+  const { data, error } = await supabasePublicServer
+    .from("delivery_zones")
+    .select("id, name, fee_cents")
+    .eq("active", true)
+    .order("sort_order")
+    .order("name");
+
+  if (error) throw new Error(error.message);
+  return data ?? [];
+});
 
 export const createOrder = createServerFn({ method: "POST" })
   .validator((data: unknown) => CreateOrderSchema.parse(data))
@@ -41,6 +62,7 @@ export const createOrder = createServerFn({ method: "POST" })
       p_customer_phone: data.customer_phone,
       p_address: data.order_type === "entrega" ? (data.address ?? null) : null,
       p_order_type: data.order_type,
+      p_delivery_zone_id: data.order_type === "entrega" ? (data.delivery_zone_id ?? null) : null,
       p_notes: data.notes ?? null,
       p_items: data.items,
     });

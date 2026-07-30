@@ -49,7 +49,7 @@ const deliveryQO = queryOptions({
       supabase
         .from("orders")
         .select(
-          "id, order_number, customer_name, customer_phone, address, status, subtotal_cents, delivery_fee_cents, total_cents, estimated_delivery_at, created_at",
+          "id, order_number, customer_name, customer_phone, address, delivery_zone_name, status, subtotal_cents, delivery_fee_cents, total_cents, estimated_delivery_at, created_at",
         )
         .eq("order_type", "entrega")
         .in("status", ["aceite", "em_preparacao", "saiu_entrega", "entregue"])
@@ -175,7 +175,7 @@ function DeliveriesAdmin() {
       <div>
         <h1 className="font-display text-3xl font-bold">Entregas</h1>
         <p className="text-sm text-muted-foreground">
-          Defina o horário e o preço de cada pedido e atribua um estafeta
+          Confirme a taxa, defina o horário e atribua um estafeta
         </p>
       </div>
 
@@ -270,7 +270,8 @@ function DeliveriesAdmin() {
                     {order.order_number} · {order.customer_name}
                   </DialogTitle>
                   <DialogDescription>
-                    Defina o preço, o horário e o estafeta responsável por este pedido.
+                    A taxa vem da localização e pode ser ajustada neste pedido. Defina também o
+                    horário e o estafeta.
                   </DialogDescription>
                 </DialogHeader>
 
@@ -285,7 +286,10 @@ function DeliveriesAdmin() {
                     </a>
                     <div className="flex items-start gap-2 rounded-lg border p-3">
                       <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-brand" aria-hidden="true" />
-                      <span>{order.address}</span>
+                      <span>
+                        {order.delivery_zone_name ? `${order.delivery_zone_name} · ` : null}
+                        {order.address}
+                      </span>
                     </div>
                   </div>
 
@@ -469,7 +473,7 @@ function DeliveriesAdmin() {
                     </p>
                   ) : (
                     <p className="mt-2 text-xs font-medium text-amber-700">
-                      Defina o preço e o horário antes de iniciar esta entrega.
+                      Confirme a taxa e defina o horário antes de iniciar esta entrega.
                     </p>
                   )}
 
@@ -485,9 +489,7 @@ function DeliveriesAdmin() {
                           type="button"
                           disabled={statusMutation.isPending || !order.estimated_delivery_at}
                           title={
-                            order.estimated_delivery_at
-                              ? undefined
-                              : "Defina o preço e o horário primeiro"
+                            order.estimated_delivery_at ? undefined : "Defina o horário primeiro"
                           }
                           onClick={() =>
                             statusMutation.mutate({

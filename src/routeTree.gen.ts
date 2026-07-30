@@ -20,6 +20,7 @@ import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedEstafetaRouteImport } from './routes/_authenticated/estafeta'
 import { Route as PedidoIdRouteImport } from './routes/pedido.$id'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
+import { Route as AuthenticatedAdminConfiguracoesRouteImport } from './routes/_authenticated/admin.configuracoes'
 import { Route as AuthenticatedAdminEntregasRouteImport } from './routes/_authenticated/admin.entregas'
 import { Route as AuthenticatedAdminFinanceiroRouteImport } from './routes/_authenticated/admin.financeiro'
 import { Route as AuthenticatedAdminMenuRouteImport } from './routes/_authenticated/admin.menu'
@@ -82,6 +83,12 @@ const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
+const AuthenticatedAdminConfiguracoesRoute =
+  AuthenticatedAdminConfiguracoesRouteImport.update({
+    id: '/configuracoes',
+    path: '/configuracoes',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminEntregasRoute =
   AuthenticatedAdminEntregasRouteImport.update({
     id: '/entregas',
@@ -132,6 +139,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/estafeta': typeof AuthenticatedEstafetaRoute
   '/pedido/$id': typeof PedidoIdRoute
+  '/admin/configuracoes': typeof AuthenticatedAdminConfiguracoesRoute
   '/admin/entregas': typeof AuthenticatedAdminEntregasRoute
   '/admin/financeiro': typeof AuthenticatedAdminFinanceiroRoute
   '/admin/menu': typeof AuthenticatedAdminMenuRoute
@@ -150,6 +158,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/estafeta': typeof AuthenticatedEstafetaRoute
   '/pedido/$id': typeof PedidoIdRoute
+  '/admin/configuracoes': typeof AuthenticatedAdminConfiguracoesRoute
   '/admin/entregas': typeof AuthenticatedAdminEntregasRoute
   '/admin/financeiro': typeof AuthenticatedAdminFinanceiroRoute
   '/admin/menu': typeof AuthenticatedAdminMenuRoute
@@ -171,6 +180,7 @@ export interface FileRoutesById {
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/_authenticated/estafeta': typeof AuthenticatedEstafetaRoute
   '/pedido/$id': typeof PedidoIdRoute
+  '/_authenticated/admin/configuracoes': typeof AuthenticatedAdminConfiguracoesRoute
   '/_authenticated/admin/entregas': typeof AuthenticatedAdminEntregasRoute
   '/_authenticated/admin/financeiro': typeof AuthenticatedAdminFinanceiroRoute
   '/_authenticated/admin/menu': typeof AuthenticatedAdminMenuRoute
@@ -192,6 +202,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/estafeta'
     | '/pedido/$id'
+    | '/admin/configuracoes'
     | '/admin/entregas'
     | '/admin/financeiro'
     | '/admin/menu'
@@ -210,6 +221,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/estafeta'
     | '/pedido/$id'
+    | '/admin/configuracoes'
     | '/admin/entregas'
     | '/admin/financeiro'
     | '/admin/menu'
@@ -230,6 +242,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin'
     | '/_authenticated/estafeta'
     | '/pedido/$id'
+    | '/_authenticated/admin/configuracoes'
     | '/_authenticated/admin/entregas'
     | '/_authenticated/admin/financeiro'
     | '/_authenticated/admin/menu'
@@ -330,6 +343,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/configuracoes': {
+      id: '/_authenticated/admin/configuracoes'
+      path: '/configuracoes'
+      fullPath: '/admin/configuracoes'
+      preLoaderRoute: typeof AuthenticatedAdminConfiguracoesRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/entregas': {
       id: '/_authenticated/admin/entregas'
       path: '/entregas'
@@ -383,6 +403,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedAdminRouteChildren {
+  AuthenticatedAdminConfiguracoesRoute: typeof AuthenticatedAdminConfiguracoesRoute
   AuthenticatedAdminEntregasRoute: typeof AuthenticatedAdminEntregasRoute
   AuthenticatedAdminFinanceiroRoute: typeof AuthenticatedAdminFinanceiroRoute
   AuthenticatedAdminMenuRoute: typeof AuthenticatedAdminMenuRoute
@@ -394,6 +415,7 @@ interface AuthenticatedAdminRouteChildren {
 }
 
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
+  AuthenticatedAdminConfiguracoesRoute: AuthenticatedAdminConfiguracoesRoute,
   AuthenticatedAdminEntregasRoute: AuthenticatedAdminEntregasRoute,
   AuthenticatedAdminFinanceiroRoute: AuthenticatedAdminFinanceiroRoute,
   AuthenticatedAdminMenuRoute: AuthenticatedAdminMenuRoute,

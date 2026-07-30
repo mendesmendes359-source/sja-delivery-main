@@ -22,6 +22,7 @@ import {
   Menu as MenuIcon,
   PanelLeftClose,
   PanelLeftOpen,
+  Settings,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
@@ -93,9 +94,11 @@ const links: NavLink[] = [
   { to: "/admin/financeiro", label: "Financeiro", icon: PiggyBank },
   { to: "/admin/sms", label: "SMS", icon: MessageSquare },
   { to: "/admin/utilizadores", label: "Utilizadores", icon: Users },
+  { to: "/admin/configuracoes", label: "Configurações", icon: Settings },
 ];
 
 const SIDEBAR_STORAGE_KEY = "sja-admin-sidebar-v1";
+const ADMIN_ONLY_PATHS = new Set(["/admin/utilizadores", "/admin/configuracoes"]);
 
 type NavigationLinksProps = {
   items: NavLink[];
@@ -137,7 +140,7 @@ function AdminLayout() {
   });
   const { role } = Route.useRouteContext();
   const visibleLinks =
-    role === "admin" ? links : links.filter((link) => link.to !== "/admin/utilizadores");
+    role === "admin" ? links : links.filter((link) => !ADMIN_ONLY_PATHS.has(link.to));
   const currentModule =
     visibleLinks.find((link) => (link.exact ? pathname === link.to : pathname.startsWith(link.to)))
       ?.label ?? "Backoffice";

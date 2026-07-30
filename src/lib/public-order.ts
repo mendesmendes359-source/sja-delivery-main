@@ -18,6 +18,7 @@ export const PublicOrderPayloadSchema = z.object({
     delivery_fee_cents: z.number().int().nonnegative(),
     total_cents: z.number().int(),
     order_type: z.enum(["entrega", "takeaway"]),
+    delivery_zone_name: z.string().nullable(),
     estimated_delivery_at: z.string().nullable(),
     address: z.string().nullable(),
     notes: z.string().nullable(),

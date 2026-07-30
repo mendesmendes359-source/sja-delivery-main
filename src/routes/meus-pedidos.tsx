@@ -169,7 +169,7 @@ function OrderHistoryPage() {
                   status !== "cancelado" &&
                   status !== "entregue" ? (
                     <p className="mt-3 rounded-xl bg-amber-50 p-3 text-xs font-medium text-amber-800">
-                      Preço e horário desta entrega ainda por definir.
+                      Taxa incluída; horário da entrega ainda por definir.
                     </p>
                   ) : null}
 

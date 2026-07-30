@@ -45,7 +45,7 @@ export function AppSelect({
 }: AppSelectProps) {
   return (
     <Select
-      value={value || undefined}
+      value={value}
       onValueChange={onValueChange}
       disabled={disabled}
       required={required}

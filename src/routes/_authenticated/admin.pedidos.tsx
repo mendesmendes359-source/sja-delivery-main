@@ -24,7 +24,7 @@ const ordersQO = queryOptions({
     const { data, error } = await supabase
       .from("orders")
       .select(
-        "id, order_number, customer_name, customer_phone, address, status, cancellation_reason, order_type, subtotal_cents, delivery_fee_cents, total_cents, estimated_delivery_at, notes, created_at",
+        "id, order_number, customer_name, customer_phone, address, status, cancellation_reason, order_type, delivery_zone_name, subtotal_cents, delivery_fee_cents, total_cents, estimated_delivery_at, notes, created_at",
       )
       .order("created_at", { ascending: false })
       .limit(100);
@@ -286,7 +286,12 @@ function OrdersAdmin() {
                 {selectedOrder.address ? (
                   <p className="mt-2 flex items-start gap-2 text-sm text-muted-foreground">
                     <MapPin className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-                    <span>{selectedOrder.address}</span>
+                    <span>
+                      {selectedOrder.delivery_zone_name
+                        ? `${selectedOrder.delivery_zone_name} · `
+                        : null}
+                      {selectedOrder.address}
+                    </span>
                   </p>
                 ) : null}
               </section>
@@ -305,10 +310,7 @@ function OrdersAdmin() {
                   </p>
                   {selectedOrder.order_type === "entrega" ? (
                     <p className="mt-1 text-xs text-muted-foreground">
-                      Taxa:{" "}
-                      {selectedOrder.estimated_delivery_at
-                        ? formatMoney(selectedOrder.delivery_fee_cents)
-                        : "por definir"}
+                      Taxa: {formatMoney(selectedOrder.delivery_fee_cents)}
                     </p>
                   ) : null}
                 </div>

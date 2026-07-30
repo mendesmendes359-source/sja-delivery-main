@@ -1,14 +1,15 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { SiteFooter, SiteHeader } from "@/components/site-chrome";
 import { ProductImage } from "@/components/product-image";
 import { useCart } from "@/lib/cart";
 import { formatMoney } from "@/lib/format";
 import { saveOrderHistoryEntry } from "@/lib/order-history";
-import { createOrder } from "@/lib/orders.functions";
-import { Minus, Plus, Trash2 } from "lucide-react";
+import { createOrder, listActiveDeliveryZones } from "@/lib/orders.functions";
+import { AppSelect } from "@/components/ui/app-select";
+import { MapPin, Minus, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/checkout")({
@@ -27,12 +28,29 @@ function Checkout() {
   const { items, setQty, remove, total_cents, clear } = useCart();
   const navigate = useNavigate();
   const createOrderFn = useServerFn(createOrder);
+  const listDeliveryZonesFn = useServerFn(listActiveDeliveryZones);
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [type, setType] = useState<"entrega" | "takeaway">("entrega");
+  const [deliveryZoneId, setDeliveryZoneId] = useState("");
   const [address, setAddress] = useState("");
   const [notes, setNotes] = useState("");
+  const deliveryZonesQuery = useQuery({
+    queryKey: ["delivery-zones", "active"],
+    queryFn: () => listDeliveryZonesFn(),
+    staleTime: 5 * 60 * 1000,
+  });
+  const deliveryZones = deliveryZonesQuery.data ?? [];
+  const effectiveDeliveryZoneId = deliveryZoneId;
+  const selectedDeliveryZone =
+    deliveryZones.find((zone) => zone.id === effectiveDeliveryZoneId) ?? null;
+  const deliveryFeeCents = type === "entrega" ? (selectedDeliveryZone?.fee_cents ?? 0) : 0;
+  const orderTotalCents = total_cents + deliveryFeeCents;
+  const deliveryZoneOptions = deliveryZones.map((zone) => ({
+    value: zone.id,
+    label: `${zone.name} — ${formatMoney(zone.fee_cents)}`,
+  }));
 
   const mutation = useMutation({
     mutationFn: async () => {
@@ -41,6 +59,7 @@ function Checkout() {
           customer_name: name.trim(),
           customer_phone: phone.trim(),
           order_type: type,
+          delivery_zone_id: type === "entrega" ? effectiveDeliveryZoneId : null,
           address: type === "entrega" ? address.trim() : null,
           notes: notes.trim() || null,
           items: items.map((i) => ({ menu_item_id: i.id, quantity: i.quantity })),
@@ -69,7 +88,7 @@ function Checkout() {
     items.length > 0 &&
     name.trim().length >= 2 &&
     phone.trim().length >= 6 &&
-    (type === "takeaway" || address.trim().length >= 3) &&
+    (type === "takeaway" || (Boolean(selectedDeliveryZone) && address.trim().length >= 3)) &&
     !mutation.isPending;
 
   return (
@@ -140,7 +159,7 @@ function Checkout() {
                     />
                     <strong>Entrega</strong> ao domicílio
                     <span className="mt-1 block text-xs text-muted-foreground">
-                      O preço e o horário serão definidos para este pedido pela equipa.
+                      A taxa é calculada pela localização; o horário será definido pela equipa.
                     </span>
                   </label>
                   <label
@@ -156,19 +175,58 @@ function Checkout() {
                     <strong>Take-away</strong> (levantar)
                   </label>
                 </div>
-                {type === "entrega" && (
-                  <div className="mt-4">
-                    <Field label="Morada">
+                {type === "entrega" ? (
+                  <div className="mt-4 grid gap-4 md:grid-cols-2">
+                    <div>
+                      <span className="mb-1 block text-sm font-medium text-foreground">
+                        Localização
+                      </span>
+                      <AppSelect
+                        value={effectiveDeliveryZoneId}
+                        onValueChange={setDeliveryZoneId}
+                        options={deliveryZoneOptions}
+                        ariaLabel="Localização da entrega"
+                        placeholder={
+                          deliveryZonesQuery.isPending
+                            ? "A carregar localizações..."
+                            : "Selecione a localização"
+                        }
+                        disabled={
+                          deliveryZonesQuery.isPending ||
+                          deliveryZonesQuery.isError ||
+                          deliveryZones.length === 0
+                        }
+                        required
+                        className="w-full"
+                      />
+                      {deliveryZonesQuery.isError ? (
+                        <span className="mt-2 block text-xs font-medium text-red-700">
+                          Não foi possível carregar as localizações. Tente novamente.
+                        </span>
+                      ) : deliveryZones.length === 0 && !deliveryZonesQuery.isPending ? (
+                        <span className="mt-2 block text-xs font-medium text-amber-700">
+                          As entregas estão temporariamente indisponíveis.
+                        </span>
+                      ) : selectedDeliveryZone ? (
+                        <span className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
+                          <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
+                          Taxa para {selectedDeliveryZone.name}:{" "}
+                          {formatMoney(selectedDeliveryZone.fee_cents)}
+                        </span>
+                      ) : null}
+                    </div>
+                    <Field label="Morada detalhada">
                       <input
                         required
                         value={address}
                         onChange={(e) => setAddress(e.target.value)}
                         className="input"
+                        placeholder="Rua, número da casa e referência"
                         maxLength={300}
                       />
                     </Field>
                   </div>
-                )}
+                ) : null}
                 <div className="mt-4">
                   <Field label="Notas (opcional)">
                     <textarea
@@ -188,7 +246,7 @@ function Checkout() {
               >
                 {mutation.isPending
                   ? "A enviar..."
-                  : `Confirmar pedido · ${formatMoney(total_cents)}`}
+                  : `Confirmar pedido · ${formatMoney(orderTotalCents)}`}
               </button>
             </form>
           )}
@@ -250,12 +308,20 @@ function Checkout() {
             {type === "entrega" ? (
               <div className="flex items-center justify-between text-muted-foreground">
                 <span>Taxa de entrega</span>
-                <span className="font-medium text-amber-700">A definir</span>
+                <span
+                  className={
+                    selectedDeliveryZone
+                      ? "font-medium text-foreground"
+                      : "font-medium text-amber-700"
+                  }
+                >
+                  {selectedDeliveryZone ? formatMoney(deliveryFeeCents) : "Selecione a localização"}
+                </span>
               </div>
             ) : null}
             <div className="flex items-center justify-between border-t pt-2 font-semibold">
-              <span>{type === "entrega" ? "Subtotal atual" : "Total"}</span>
-              <span className="font-display text-lg text-navy">{formatMoney(total_cents)}</span>
+              <span>Total</span>
+              <span className="font-display text-lg text-navy">{formatMoney(orderTotalCents)}</span>
             </div>
           </div>
         </aside>

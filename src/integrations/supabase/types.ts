@@ -76,6 +76,36 @@ export type Database = {
           },
         ];
       };
+      delivery_zones: {
+        Row: {
+          active: boolean;
+          created_at: string;
+          fee_cents: number;
+          id: string;
+          name: string;
+          sort_order: number;
+          updated_at: string;
+        };
+        Insert: {
+          active?: boolean;
+          created_at?: string;
+          fee_cents?: number;
+          id?: string;
+          name: string;
+          sort_order?: number;
+          updated_at?: string;
+        };
+        Update: {
+          active?: boolean;
+          created_at?: string;
+          fee_cents?: number;
+          id?: string;
+          name?: string;
+          sort_order?: number;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       expenses: {
         Row: {
           amount_cents: number;
@@ -239,6 +269,8 @@ export type Database = {
           customer_name: string;
           customer_phone: string;
           delivery_fee_cents: number;
+          delivery_zone_id: string | null;
+          delivery_zone_name: string | null;
           estimated_delivery_at: string | null;
           id: string;
           notes: string | null;
@@ -256,6 +288,8 @@ export type Database = {
           customer_name: string;
           customer_phone: string;
           delivery_fee_cents?: number;
+          delivery_zone_id?: string | null;
+          delivery_zone_name?: string | null;
           estimated_delivery_at?: string | null;
           id?: string;
           notes?: string | null;
@@ -273,6 +307,8 @@ export type Database = {
           customer_name?: string;
           customer_phone?: string;
           delivery_fee_cents?: number;
+          delivery_zone_id?: string | null;
+          delivery_zone_name?: string | null;
           estimated_delivery_at?: string | null;
           id?: string;
           notes?: string | null;
@@ -283,7 +319,15 @@ export type Database = {
           total_cents?: number;
           updated_at?: string;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "orders_delivery_zone_id_fkey";
+            columns: ["delivery_zone_id"];
+            isOneToOne: false;
+            referencedRelation: "delivery_zones";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       sms_logs: {
         Row: {
@@ -397,6 +441,7 @@ export type Database = {
           p_address: string | null;
           p_customer_name: string;
           p_customer_phone: string;
+          p_delivery_zone_id: string | null;
           p_items: Json;
           p_notes: string | null;
           p_order_type: Database["public"]["Enums"]["order_type"];

@@ -12,6 +12,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -22,7 +23,7 @@ const ordersQO = queryOptions({
     const { data, error } = await supabase
       .from("orders")
       .select(
-        "id, order_number, customer_name, customer_phone, address, status, order_type, total_cents, notes, created_at",
+        "id, order_number, customer_name, customer_phone, address, status, cancellation_reason, order_type, total_cents, notes, created_at",
       )
       .order("created_at", { ascending: false })
       .limit(100);
@@ -59,19 +60,34 @@ function OrdersAdmin() {
   const { data } = useSuspenseQuery(ordersQO);
   const [filter, setFilter] = useState<string>("todos");
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [cancellationDraft, setCancellationDraft] = useState<{
+    orderId: string;
+    orderNumber: string;
+    reason: string;
+  } | null>(null);
   const qc = useQueryClient();
   const updateFn = useServerFn(updateOrderStatus);
   const mut = useMutation({
-    mutationFn: (v: { order_id: string; status: (typeof STATUSES)[number] }) =>
-      updateFn({ data: v }),
+    mutationFn: (v: {
+      order_id: string;
+      status: (typeof STATUSES)[number];
+      cancellation_reason?: string | null;
+    }) => updateFn({ data: v }),
     onSuccess: (result) => {
       qc.setQueryData<typeof data>(["admin", "orders"], (orders) =>
         orders?.map((order) =>
-          order.id === result.id ? { ...order, status: result.status } : order,
+          order.id === result.id
+            ? {
+                ...order,
+                status: result.status,
+                cancellation_reason: result.cancellation_reason,
+              }
+            : order,
         ),
       );
       qc.invalidateQueries({ queryKey: ["admin", "orders"] });
       qc.invalidateQueries({ queryKey: ["admin", "sms"] });
+      setCancellationDraft(null);
       toast.success("Estado atualizado");
       if (result.notifications?.adminMissingPhone) {
         toast.warning("Defina o número do administrador no módulo SMS");
@@ -84,6 +100,23 @@ function OrdersAdmin() {
 
   const filtered = filter === "todos" ? data : data.filter((o) => o.status === filter);
   const selectedOrder = data.find((order) => order.id === selectedOrderId) ?? null;
+  const requestStatusChange = (order: (typeof data)[number], status: (typeof STATUSES)[number]) => {
+    if (status === "cancelado") {
+      setSelectedOrderId(null);
+      setCancellationDraft({
+        orderId: order.id,
+        orderNumber: order.order_number,
+        reason: order.cancellation_reason ?? "",
+      });
+      return;
+    }
+
+    mut.mutate({
+      order_id: order.id,
+      status,
+      cancellation_reason: null,
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -183,10 +216,7 @@ function OrdersAdmin() {
                     value={o.status}
                     disabled={mut.isPending}
                     onChange={(e) =>
-                      mut.mutate({
-                        order_id: o.id,
-                        status: e.target.value as (typeof STATUSES)[number],
-                      })
+                      requestStatusChange(o, e.target.value as (typeof STATUSES)[number])
                     }
                     className="rounded-md border bg-background px-2 py-1 text-xs"
                   >
@@ -196,6 +226,18 @@ function OrdersAdmin() {
                       </option>
                     ))}
                   </select>
+                  {o.status === "cancelado" && o.cancellation_reason ? (
+                    <div className="mt-2 max-w-52 text-xs text-red-700">
+                      <p>{o.cancellation_reason}</p>
+                      <button
+                        type="button"
+                        className="mt-1 font-medium underline underline-offset-2"
+                        onClick={() => requestStatusChange(o, "cancelado")}
+                      >
+                        Alterar motivo
+                      </button>
+                    </div>
+                  ) : null}
                 </td>
               </tr>
             ))}
@@ -273,16 +315,32 @@ function OrdersAdmin() {
                 </section>
               ) : null}
 
+              {selectedOrder.status === "cancelado" && selectedOrder.cancellation_reason ? (
+                <section className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-900">
+                  <p className="text-xs font-medium uppercase tracking-wide">
+                    Motivo do cancelamento
+                  </p>
+                  <p className="mt-1 text-sm">{selectedOrder.cancellation_reason}</p>
+                  <button
+                    type="button"
+                    className="mt-2 text-sm font-medium underline underline-offset-2"
+                    onClick={() => requestStatusChange(selectedOrder, "cancelado")}
+                  >
+                    Alterar motivo
+                  </button>
+                </section>
+              ) : null}
+
               <label className="block text-sm font-medium">
                 Estado do pedido
                 <select
                   value={selectedOrder.status}
                   disabled={mut.isPending}
                   onChange={(event) =>
-                    mut.mutate({
-                      order_id: selectedOrder.id,
-                      status: event.target.value as (typeof STATUSES)[number],
-                    })
+                    requestStatusChange(
+                      selectedOrder,
+                      event.target.value as (typeof STATUSES)[number],
+                    )
                   }
                   className="mt-2 w-full rounded-xl border bg-background px-3 py-3 text-sm"
                 >
@@ -302,6 +360,77 @@ function OrdersAdmin() {
                 Estado atual: {STATUS_LABEL[selectedOrder.status]}
               </div>
             </div>
+          </DialogContent>
+        ) : null}
+      </Dialog>
+
+      <Dialog
+        open={Boolean(cancellationDraft)}
+        onOpenChange={(open) => {
+          if (!open && !mut.isPending) setCancellationDraft(null);
+        }}
+      >
+        {cancellationDraft ? (
+          <DialogContent className="w-[calc(100%-2rem)] rounded-2xl sm:max-w-md">
+            <form
+              onSubmit={(event) => {
+                event.preventDefault();
+                const reason = cancellationDraft.reason.trim();
+                if (reason.length < 3) return;
+                mut.mutate({
+                  order_id: cancellationDraft.orderId,
+                  status: "cancelado",
+                  cancellation_reason: reason,
+                });
+              }}
+            >
+              <DialogHeader className="text-left">
+                <DialogTitle>Cancelar {cancellationDraft.orderNumber}</DialogTitle>
+                <DialogDescription>
+                  O cliente verá este motivo no acompanhamento e no histórico do pedido.
+                </DialogDescription>
+              </DialogHeader>
+
+              <label htmlFor="cancellation-reason" className="mt-5 block text-sm font-medium">
+                Motivo do cancelamento
+              </label>
+              <textarea
+                id="cancellation-reason"
+                required
+                autoFocus
+                minLength={3}
+                maxLength={500}
+                value={cancellationDraft.reason}
+                onChange={(event) =>
+                  setCancellationDraft((draft) =>
+                    draft ? { ...draft, reason: event.target.value } : draft,
+                  )
+                }
+                placeholder="Ex.: produto indisponível"
+                className="mt-2 min-h-28 w-full rounded-xl border bg-background px-3 py-2 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
+              />
+              <p className="mt-1 text-right text-xs text-muted-foreground">
+                {cancellationDraft.reason.length}/500
+              </p>
+
+              <DialogFooter className="mt-5 gap-2 sm:space-x-0">
+                <button
+                  type="button"
+                  disabled={mut.isPending}
+                  onClick={() => setCancellationDraft(null)}
+                  className="rounded-md border px-4 py-2 text-sm font-medium disabled:opacity-50"
+                >
+                  Voltar
+                </button>
+                <button
+                  type="submit"
+                  disabled={mut.isPending || cancellationDraft.reason.trim().length < 3}
+                  className="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                >
+                  {mut.isPending ? "A cancelar..." : "Confirmar cancelamento"}
+                </button>
+              </DialogFooter>
+            </form>
           </DialogContent>
         ) : null}
       </Dialog>

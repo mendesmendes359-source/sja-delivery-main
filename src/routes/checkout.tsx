@@ -6,6 +6,7 @@ import { SiteFooter, SiteHeader } from "@/components/site-chrome";
 import { ProductImage } from "@/components/product-image";
 import { useCart } from "@/lib/cart";
 import { formatMoney } from "@/lib/format";
+import { saveOrderHistoryEntry } from "@/lib/order-history";
 import { createOrder } from "@/lib/orders.functions";
 import { Minus, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -48,6 +49,13 @@ function Checkout() {
       return res;
     },
     onSuccess: (res) => {
+      saveOrderHistoryEntry({
+        id: res.id,
+        order_number: res.order_number,
+        total_cents: res.total_cents,
+        order_type: type,
+        created_at: new Date().toISOString(),
+      });
       clear();
       toast.success(`Pedido ${res.order_number} recebido!`);
       navigate({ to: "/pedido/$id", params: { id: res.id } });

@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useCart } from "@/lib/cart";
-import { LockKeyhole, ShoppingBag } from "lucide-react";
+import { History, LockKeyhole, ShoppingBag } from "lucide-react";
 import { BrandLogo } from "@/components/brand-logo";
 
 export function SiteHeader() {
@@ -27,11 +27,20 @@ export function SiteHeader() {
             Menu
           </Link>
           <Link
+            to="/meus-pedidos"
+            aria-label="Meus pedidos"
+            className="inline-flex items-center gap-2 rounded-md px-2 py-2 hover:bg-muted [&.active]:text-brand sm:px-3"
+          >
+            <History aria-hidden="true" className="h-4 w-4" />
+            <span className="hidden md:inline">Meus pedidos</span>
+          </Link>
+          <Link
             to="/checkout"
+            aria-label="Carrinho"
             className="ml-1 inline-flex items-center gap-2 rounded-md bg-brand px-3 py-2 text-brand-foreground hover:opacity-90 sm:ml-2 sm:px-4"
           >
-            <ShoppingBag className="h-4 w-4" />
-            Carrinho
+            <ShoppingBag aria-hidden="true" className="h-4 w-4" />
+            <span className="hidden sm:inline">Carrinho</span>
             {count > 0 && (
               <span className="rounded-full bg-brand-foreground/20 px-2 text-xs">{count}</span>
             )}

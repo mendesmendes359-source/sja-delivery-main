@@ -234,6 +234,7 @@ export type Database = {
       orders: {
         Row: {
           address: string | null;
+          cancellation_reason: string | null;
           created_at: string;
           customer_name: string;
           customer_phone: string;
@@ -247,6 +248,7 @@ export type Database = {
         };
         Insert: {
           address?: string | null;
+          cancellation_reason?: string | null;
           created_at?: string;
           customer_name: string;
           customer_phone: string;
@@ -260,6 +262,7 @@ export type Database = {
         };
         Update: {
           address?: string | null;
+          cancellation_reason?: string | null;
           created_at?: string;
           customer_name?: string;
           customer_phone?: string;

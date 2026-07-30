@@ -1,40 +1,13 @@
 import { createFileRoute, notFound, Link } from "@tanstack/react-router";
 import { useSuspenseQuery, queryOptions } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { SiteFooter, SiteHeader } from "@/components/site-chrome";
 import { formatMoney, formatDate, STATUS_LABEL, STATUS_ORDER } from "@/lib/format";
+import { saveOrderHistoryEntry } from "@/lib/order-history";
+import { PublicOrderPayloadSchema } from "@/lib/public-order";
 import { Check } from "lucide-react";
 import type { RouteLoaderArgs } from "@/router-context";
-import { z } from "zod";
-
-const PublicOrderPayloadSchema = z.object({
-  order: z.object({
-    id: z.string().uuid(),
-    order_number: z.string(),
-    customer_name: z.string(),
-    status: z.enum([
-      "pendente",
-      "aceite",
-      "em_preparacao",
-      "saiu_entrega",
-      "entregue",
-      "cancelado",
-    ]),
-    total_cents: z.number().int(),
-    order_type: z.enum(["entrega", "takeaway"]),
-    address: z.string().nullable(),
-    notes: z.string().nullable(),
-    created_at: z.string(),
-  }),
-  items: z.array(
-    z.object({
-      id: z.string().uuid(),
-      name_snapshot: z.string(),
-      quantity: z.number().int(),
-      unit_price_cents: z.number().int(),
-    }),
-  ),
-});
 
 const orderQO = (id: string) =>
   queryOptions({
@@ -68,6 +41,16 @@ function OrderPage() {
   const { order, items } = data;
   const idx = order.status === "cancelado" ? -1 : STATUS_ORDER.indexOf(order.status);
   const cancelled = order.status === "cancelado";
+
+  useEffect(() => {
+    saveOrderHistoryEntry({
+      id: order.id,
+      order_number: order.order_number,
+      total_cents: order.total_cents,
+      order_type: order.order_type,
+      created_at: order.created_at,
+    });
+  }, [order.created_at, order.id, order.order_number, order.order_type, order.total_cents]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -113,6 +96,15 @@ function OrderPage() {
               </div>
             </div>
           )}
+
+          {cancelled && order.cancellation_reason ? (
+            <div className="mt-6 rounded-xl border border-red-200 bg-red-50 p-4 text-red-900">
+              <p className="text-xs font-semibold uppercase tracking-wide">
+                Motivo do cancelamento
+              </p>
+              <p className="mt-1 text-sm">{order.cancellation_reason}</p>
+            </div>
+          ) : null}
 
           <div className="mt-8 rounded-lg border p-4">
             <h2 className="font-semibold">Itens</h2>

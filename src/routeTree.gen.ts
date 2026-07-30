@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as MenuRouteImport } from './routes/menu'
+import { Route as MeusPedidosRouteImport } from './routes/meus-pedidos'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedEstafetaRouteImport } from './routes/_authenticated/estafeta'
@@ -49,6 +50,11 @@ const CheckoutRoute = CheckoutRouteImport.update({
 const MenuRoute = MenuRouteImport.update({
   id: '/menu',
   path: '/menu',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MeusPedidosRoute = MeusPedidosRouteImport.update({
+  id: '/meus-pedidos',
+  path: '/meus-pedidos',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -121,6 +127,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/checkout': typeof CheckoutRoute
   '/menu': typeof MenuRoute
+  '/meus-pedidos': typeof MeusPedidosRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/estafeta': typeof AuthenticatedEstafetaRoute
@@ -139,6 +146,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/checkout': typeof CheckoutRoute
   '/menu': typeof MenuRoute
+  '/meus-pedidos': typeof MeusPedidosRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/estafeta': typeof AuthenticatedEstafetaRoute
   '/pedido/$id': typeof PedidoIdRoute
@@ -158,6 +166,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/checkout': typeof CheckoutRoute
   '/menu': typeof MenuRoute
+  '/meus-pedidos': typeof MeusPedidosRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/_authenticated/estafeta': typeof AuthenticatedEstafetaRoute
@@ -178,6 +187,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/checkout'
     | '/menu'
+    | '/meus-pedidos'
     | '/sitemap.xml'
     | '/admin'
     | '/estafeta'
@@ -196,6 +206,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/checkout'
     | '/menu'
+    | '/meus-pedidos'
     | '/sitemap.xml'
     | '/estafeta'
     | '/pedido/$id'
@@ -214,6 +225,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/checkout'
     | '/menu'
+    | '/meus-pedidos'
     | '/sitemap.xml'
     | '/_authenticated/admin'
     | '/_authenticated/estafeta'
@@ -234,6 +246,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   CheckoutRoute: typeof CheckoutRoute
   MenuRoute: typeof MenuRoute
+  MeusPedidosRoute: typeof MeusPedidosRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   PedidoIdRoute: typeof PedidoIdRoute
 }
@@ -273,6 +286,13 @@ declare module '@tanstack/react-router' {
       path: '/menu'
       fullPath: '/menu'
       preLoaderRoute: typeof MenuRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/meus-pedidos': {
+      id: '/meus-pedidos'
+      path: '/meus-pedidos'
+      fullPath: '/meus-pedidos'
+      preLoaderRoute: typeof MeusPedidosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sitemap.xml': {
@@ -406,6 +426,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   CheckoutRoute: CheckoutRoute,
   MenuRoute: MenuRoute,
+  MeusPedidosRoute: MeusPedidosRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   PedidoIdRoute: PedidoIdRoute,
 }

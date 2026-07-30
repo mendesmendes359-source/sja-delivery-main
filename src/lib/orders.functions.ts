@@ -74,10 +74,31 @@ export const createOrder = createServerFn({ method: "POST" })
     };
   });
 
-const UpdateStatusSchema = z.object({
-  order_id: z.string().uuid(),
-  status: z.enum(["pendente", "aceite", "em_preparacao", "saiu_entrega", "entregue", "cancelado"]),
-});
+const UpdateStatusSchema = z
+  .object({
+    order_id: z.string().uuid(),
+    status: z.enum([
+      "pendente",
+      "aceite",
+      "em_preparacao",
+      "saiu_entrega",
+      "entregue",
+      "cancelado",
+    ]),
+    cancellation_reason: z.string().trim().max(500).optional().nullable(),
+  })
+  .superRefine((data, ctx) => {
+    if (
+      data.status === "cancelado" &&
+      (!data.cancellation_reason || data.cancellation_reason.length < 3)
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["cancellation_reason"],
+        message: "Indique um motivo de cancelamento com pelo menos 3 caracteres",
+      });
+    }
+  });
 
 export const updateOrderStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -87,7 +108,7 @@ export const updateOrderStatus = createServerFn({ method: "POST" })
     if (!isStaff) throw new Error("Não autorizado");
 
     const select =
-      "id, order_number, customer_name, customer_phone, order_type, status, total_cents";
+      "id, order_number, customer_name, customer_phone, order_type, status, cancellation_reason, total_cents";
     const { data: currentOrder, error: currentError } = await context.supabase
       .from("orders")
       .select(select)
@@ -97,13 +118,19 @@ export const updateOrderStatus = createServerFn({ method: "POST" })
       throw new Error(currentError?.message ?? "Pedido não encontrado");
     }
 
-    if (currentOrder.status === data.status) {
+    const cancellationReason =
+      data.status === "cancelado" ? (data.cancellation_reason?.trim() ?? null) : null;
+
+    if (
+      currentOrder.status === data.status &&
+      currentOrder.cancellation_reason === cancellationReason
+    ) {
       return { ...currentOrder, notifications: null, unchanged: true };
     }
 
     const { data: order, error } = await context.supabase
       .from("orders")
-      .update({ status: data.status })
+      .update({ status: data.status, cancellation_reason: cancellationReason })
       .eq("id", data.order_id)
       .select(select)
       .single();

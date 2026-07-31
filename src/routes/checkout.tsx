@@ -70,6 +70,7 @@ function Checkout() {
     onSuccess: (res) => {
       saveOrderHistoryEntry({
         id: res.id,
+        tracking_token: res.tracking_token,
         order_number: res.order_number,
         total_cents: res.total_cents,
         order_type: type,
@@ -77,7 +78,11 @@ function Checkout() {
       });
       clear();
       toast.success(`Pedido ${res.order_number} recebido!`);
-      navigate({ to: "/pedido/$id", params: { id: res.id } });
+      navigate({
+        to: "/pedido/$id",
+        params: { id: res.id },
+        search: { token: res.tracking_token },
+      });
     },
     onError: (err) => {
       toast.error(err instanceof Error ? err.message : "Erro ao criar pedido");

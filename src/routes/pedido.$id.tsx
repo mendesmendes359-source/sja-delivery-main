@@ -7,13 +7,17 @@ import { formatMoney, formatDate, STATUS_LABEL, STATUS_ORDER } from "@/lib/forma
 import { saveOrderHistoryEntry } from "@/lib/order-history";
 import { PublicOrderPayloadSchema } from "@/lib/public-order";
 import { Check, Clock3 } from "lucide-react";
-import type { RouteLoaderArgs } from "@/router-context";
 
-const orderQO = (id: string) =>
+const TRACKING_TOKEN = /^[0-9a-f]{64}$/;
+
+const orderQO = (id: string, token: string) =>
   queryOptions({
-    queryKey: ["order", id],
+    queryKey: ["order", id, token],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("get_public_order", { p_order_id: id });
+      const { data, error } = await supabase.rpc("get_public_order", {
+        p_order_id: id,
+        p_tracking_token: token,
+      });
       if (error) throw error;
       if (!data) throw notFound();
       return PublicOrderPayloadSchema.parse(data);
@@ -22,6 +26,11 @@ const orderQO = (id: string) =>
   });
 
 export const Route = createFileRoute("/pedido/$id")({
+  validateSearch: (search: Record<string, unknown>): { token?: string } => {
+    const token = typeof search.token === "string" ? search.token.toLowerCase() : "";
+    return TRACKING_TOKEN.test(token) ? { token } : {};
+  },
+  loaderDeps: ({ search }) => ({ token: search.token }),
   head: () => ({
     meta: [
       { title: "Estado do pedido — SJA Fast Food" },
@@ -29,14 +38,17 @@ export const Route = createFileRoute("/pedido/$id")({
       { name: "robots", content: "noindex" },
     ],
   }),
-  loader: ({ params, context }: RouteLoaderArgs<{ id: string }>) =>
-    context.queryClient.ensureQueryData(orderQO(params.id)),
+  loader: ({ params, deps, context }) => {
+    if (!deps.token) throw notFound();
+    return context.queryClient.ensureQueryData(orderQO(params.id, deps.token));
+  },
   component: OrderPage,
 });
 
 function OrderPage() {
   const { id } = Route.useParams();
-  const { data } = useSuspenseQuery(orderQO(id));
+  const token = Route.useSearch().token!;
+  const { data } = useSuspenseQuery(orderQO(id, token));
 
   const { order, items } = data;
   const idx = order.status === "cancelado" ? -1 : STATUS_ORDER.indexOf(order.status);
@@ -46,12 +58,13 @@ function OrderPage() {
   useEffect(() => {
     saveOrderHistoryEntry({
       id: order.id,
+      tracking_token: token,
       order_number: order.order_number,
       total_cents: order.total_cents,
       order_type: order.order_type,
       created_at: order.created_at,
     });
-  }, [order.created_at, order.id, order.order_number, order.order_type, order.total_cents]);
+  }, [order.created_at, order.id, order.order_number, order.order_type, order.total_cents, token]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -63,7 +76,7 @@ function OrderPage() {
           </div>
           <h1 className="mt-2 font-display text-3xl md:text-4xl font-bold">{order.order_number}</h1>
           <p className="mt-2 text-muted-foreground">
-            Olá {order.customer_name} — o seu pedido foi criado em {formatDate(order.created_at)}
+            O seu pedido foi criado em {formatDate(order.created_at)}
           </p>
 
           {!cancelled && (
@@ -170,21 +183,6 @@ function OrderPage() {
               <strong className="text-foreground">Tipo:</strong>{" "}
               {order.order_type === "entrega" ? "Entrega ao domicílio" : "Take-away"}
             </div>
-            {order.address && (
-              <div>
-                <strong className="text-foreground">Morada:</strong> {order.address}
-              </div>
-            )}
-            {order.delivery_zone_name ? (
-              <div>
-                <strong className="text-foreground">Localização:</strong> {order.delivery_zone_name}
-              </div>
-            ) : null}
-            {order.notes && (
-              <div>
-                <strong className="text-foreground">Notas:</strong> {order.notes}
-              </div>
-            )}
           </div>
 
           <div className="mt-6">

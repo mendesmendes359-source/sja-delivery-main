@@ -61,9 +61,14 @@ export const listActiveDeliveryZones = createServerFn({ method: "GET" }).handler
 export const createOrder = createServerFn({ method: "POST" })
   .validator((data: unknown) => CreateOrderSchema.parse(data))
   .handler(async ({ data }) => {
-    const { supabasePublicServer } = await import("@/integrations/supabase/client.public-server");
+    const [{ supabaseAdmin }, { consumeOrderRateLimit, createRateLimitError }] = await Promise.all([
+      import("@/integrations/supabase/client.server"),
+      import("@/lib/order-security.server"),
+    ]);
+    const rateLimit = await consumeOrderRateLimit(data.customer_phone);
+    if (!rateLimit.allowed) throw createRateLimitError(rateLimit.retry_after_seconds);
 
-    const { data: createdOrders, error } = await supabasePublicServer.rpc("create_public_order", {
+    const createArgs = {
       p_customer_name: data.customer_name,
       p_customer_phone: data.customer_phone,
       p_address: data.order_type === "entrega" ? (data.address ?? null) : null,
@@ -71,9 +76,17 @@ export const createOrder = createServerFn({ method: "POST" })
       p_delivery_zone_id: data.order_type === "entrega" ? (data.delivery_zone_id ?? null) : null,
       p_notes: data.notes ?? null,
       p_items: data.items,
-    });
+    };
+    // Supabase generates a union because the database intentionally retains a
+    // private six-argument implementation with the same function name.
+    const { data: createdOrders, error } = await supabaseAdmin.rpc(
+      "create_public_order",
+      createArgs as never,
+    );
     const order = createdOrders?.[0];
-    if (error || !order) throw new Error(error?.message ?? "Falhou criar pedido");
+    if (error || !order || !("tracking_token" in order)) {
+      throw new Error(error?.message ?? "Falhou criar pedido");
+    }
 
     // Notify customer and administrator without blocking order creation.
     try {
@@ -89,7 +102,7 @@ export const createOrder = createServerFn({ method: "POST" })
           total_cents: order.total_cents,
         },
         "pendente",
-        supabasePublicServer,
+        supabaseAdmin,
       );
     } catch (error) {
       console.warn("[sms] erro ao notificar novo pedido", error);
@@ -99,6 +112,8 @@ export const createOrder = createServerFn({ method: "POST" })
       id: order.id,
       order_number: order.order_number,
       total_cents: order.total_cents,
+      tracking_token: order.tracking_token,
+      tracking_expires_at: order.tracking_expires_at,
     };
   });
 

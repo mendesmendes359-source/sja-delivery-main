@@ -1,12 +1,13 @@
 import { useSyncExternalStore } from "react";
 import { z } from "zod";
 
-const STORAGE_KEY = "sja-order-history-v1";
+const STORAGE_KEY = "sja-order-history-v2";
 const HISTORY_CHANGED_EVENT = "sja-order-history-changed";
 const MAX_HISTORY_ENTRIES = 50;
 
 const OrderHistoryEntrySchema = z.object({
   id: z.string().uuid(),
+  tracking_token: z.string().regex(/^[0-9a-f]{64}$/),
   order_number: z.string().min(1).max(100),
   total_cents: z.number().int().nonnegative(),
   order_type: z.enum(["entrega", "takeaway"]),

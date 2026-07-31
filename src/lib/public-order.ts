@@ -4,7 +4,6 @@ export const PublicOrderPayloadSchema = z.object({
   order: z.object({
     id: z.string().uuid(),
     order_number: z.string(),
-    customer_name: z.string(),
     status: z.enum([
       "pendente",
       "aceite",
@@ -18,10 +17,8 @@ export const PublicOrderPayloadSchema = z.object({
     delivery_fee_cents: z.number().int().nonnegative(),
     total_cents: z.number().int(),
     order_type: z.enum(["entrega", "takeaway"]),
-    delivery_zone_name: z.string().nullable(),
     estimated_delivery_at: z.string().nullable(),
-    address: z.string().nullable(),
-    notes: z.string().nullable(),
+    tracking_expires_at: z.string(),
     created_at: z.string(),
   }),
   items: z.array(

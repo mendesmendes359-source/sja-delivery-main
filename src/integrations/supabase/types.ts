@@ -6,6 +6,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5";
   };
+  graphql_public: {
+    Tables: {
+      [_ in never]: never;
+    };
+    Views: {
+      [_ in never]: never;
+    };
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json;
+          operationName?: string;
+          query?: string;
+          variables?: Json;
+        };
+        Returns: Json;
+      };
+    };
+    Enums: {
+      [_ in never]: never;
+    };
+    CompositeTypes: {
+      [_ in never]: never;
+    };
+  };
   public: {
     Tables: {
       categories: {
@@ -261,6 +286,30 @@ export type Database = {
           },
         ];
       };
+      order_rate_limits: {
+        Row: {
+          request_count: number;
+          scope: string;
+          subject_hash: string;
+          updated_at: string;
+          window_started_at: string;
+        };
+        Insert: {
+          request_count?: number;
+          scope: string;
+          subject_hash: string;
+          updated_at?: string;
+          window_started_at: string;
+        };
+        Update: {
+          request_count?: number;
+          scope?: string;
+          subject_hash?: string;
+          updated_at?: string;
+          window_started_at?: string;
+        };
+        Relationships: [];
+      };
       orders: {
         Row: {
           address: string | null;
@@ -279,6 +328,8 @@ export type Database = {
           status: Database["public"]["Enums"]["order_status"];
           subtotal_cents: number;
           total_cents: number;
+          tracking_expires_at: string;
+          tracking_token_hash: string | null;
           updated_at: string;
         };
         Insert: {
@@ -298,6 +349,8 @@ export type Database = {
           status?: Database["public"]["Enums"]["order_status"];
           subtotal_cents?: number;
           total_cents?: number;
+          tracking_expires_at?: string;
+          tracking_token_hash?: string | null;
           updated_at?: string;
         };
         Update: {
@@ -317,6 +370,8 @@ export type Database = {
           status?: Database["public"]["Enums"]["order_status"];
           subtotal_cents?: number;
           total_cents?: number;
+          tracking_expires_at?: string;
+          tracking_token_hash?: string | null;
           updated_at?: string;
         };
         Relationships: [
@@ -430,31 +485,54 @@ export type Database = {
     };
     Functions: {
       assign_delivery: {
-        Args: {
-          p_courier_id: string;
-          p_order_id: string;
-        };
+        Args: { p_courier_id: string; p_order_id: string };
         Returns: string;
       };
-      create_public_order: {
-        Args: {
-          p_address: string | null;
-          p_customer_name: string;
-          p_customer_phone: string;
-          p_delivery_zone_id: string | null;
-          p_items: Json;
-          p_notes: string | null;
-          p_order_type: Database["public"]["Enums"]["order_type"];
-        };
+      consume_order_rate_limit: {
+        Args: { p_ip_hash: string; p_phone_hash: string };
         Returns: {
-          id: string;
-          order_number: string;
-          status: Database["public"]["Enums"]["order_status"];
-          total_cents: number;
+          allowed: boolean;
+          retry_after_seconds: number;
         }[];
       };
+      create_public_order:
+        | {
+            Args: {
+              p_address: string;
+              p_customer_name: string;
+              p_customer_phone: string;
+              p_items: Json;
+              p_notes: string;
+              p_order_type: Database["public"]["Enums"]["order_type"];
+            };
+            Returns: {
+              id: string;
+              order_number: string;
+              status: Database["public"]["Enums"]["order_status"];
+              total_cents: number;
+            }[];
+          }
+        | {
+            Args: {
+              p_address: string;
+              p_customer_name: string;
+              p_customer_phone: string;
+              p_delivery_zone_id: string;
+              p_items: Json;
+              p_notes: string;
+              p_order_type: Database["public"]["Enums"]["order_type"];
+            };
+            Returns: {
+              id: string;
+              order_number: string;
+              status: Database["public"]["Enums"]["order_status"];
+              total_cents: number;
+              tracking_expires_at: string;
+              tracking_token: string;
+            }[];
+          };
       get_public_order: {
-        Args: { p_order_id: string };
+        Args: { p_order_id: string; p_tracking_token: string };
         Returns: Json;
       };
       has_role: {
@@ -465,19 +543,13 @@ export type Database = {
         Returns: boolean;
       };
       is_assigned_courier: {
-        Args: {
-          _order_id: string;
-          _user_id: string;
-        };
+        Args: { _order_id: string; _user_id: string };
         Returns: boolean;
       };
-      is_courier: {
-        Args: { _user_id: string };
-        Returns: boolean;
-      };
+      is_courier: { Args: { _user_id: string }; Returns: boolean };
       is_staff: { Args: { _user_id: string }; Returns: boolean };
       list_couriers: {
-        Args: Record<PropertyKey, never>;
+        Args: never;
         Returns: {
           display_name: string;
           user_id: string;
@@ -492,10 +564,7 @@ export type Database = {
         Returns: string;
       };
       update_delivery_status: {
-        Args: {
-          p_delivery_id: string;
-          p_status: string;
-        };
+        Args: { p_delivery_id: string; p_status: string };
         Returns: string;
       };
     };
@@ -623,6 +692,9 @@ export type CompositeTypes<
     : never;
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       app_role: ["admin", "staff", "estafeta"],

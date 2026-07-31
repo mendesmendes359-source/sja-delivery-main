@@ -44,7 +44,12 @@ function OrderHistoryPage() {
     queryFn: async (): Promise<LiveOrder[]> =>
       Promise.all(
         orderIds.map(async (id) => {
-          const { data, error } = await supabase.rpc("get_public_order", { p_order_id: id });
+          const saved = history.find((entry) => entry.id === id);
+          if (!saved) return { id, payload: null };
+          const { data, error } = await supabase.rpc("get_public_order", {
+            p_order_id: id,
+            p_tracking_token: saved.tracking_token,
+          });
           if (error || !data) return { id, payload: null };
           const parsed = PublicOrderPayloadSchema.safeParse(data);
           return { id, payload: parsed.success ? parsed.data : null };
@@ -183,6 +188,7 @@ function OrderHistoryPage() {
                     <Link
                       to="/pedido/$id"
                       params={{ id: saved.id }}
+                      search={{ token: saved.tracking_token }}
                       className="text-sm font-semibold text-brand hover:underline"
                     >
                       Ver acompanhamento

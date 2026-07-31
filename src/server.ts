@@ -24,6 +24,7 @@ const RUNTIME_ENV_KEYS = [
   "TWILIO_AUTH_TOKEN",
   "TWILIO_MESSAGING_SERVICE_SID",
   "TWILIO_FROM_NUMBER",
+  "ORDER_RATE_LIMIT_SECRET",
 ] as const;
 
 function attachRuntimeEnvironment(env: unknown) {

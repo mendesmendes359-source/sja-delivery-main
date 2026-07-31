@@ -6,6 +6,12 @@ import {
   NOTIFICATION_SETTINGS_PHONE,
   type NotificationSettings,
 } from "@/lib/sms-log";
+import {
+  assertManualOrderTransition,
+  ORDER_STATUSES,
+  type OrderStatus,
+  type OrderType,
+} from "@/lib/order-workflow";
 
 const CartItemSchema = z.object({
   menu_item_id: z.string().uuid(),
@@ -99,14 +105,7 @@ export const createOrder = createServerFn({ method: "POST" })
 const UpdateStatusSchema = z
   .object({
     order_id: z.string().uuid(),
-    status: z.enum([
-      "pendente",
-      "aceite",
-      "em_preparacao",
-      "saiu_entrega",
-      "entregue",
-      "cancelado",
-    ]),
+    status: z.enum(ORDER_STATUSES),
     cancellation_reason: z.string().trim().max(500).optional().nullable(),
   })
   .superRefine((data, ctx) => {
@@ -139,6 +138,12 @@ export const updateOrderStatus = createServerFn({ method: "POST" })
     if (currentError || !currentOrder) {
       throw new Error(currentError?.message ?? "Pedido não encontrado");
     }
+
+    assertManualOrderTransition(
+      currentOrder.status as OrderStatus,
+      data.status,
+      currentOrder.order_type as OrderType,
+    );
 
     const cancellationReason =
       data.status === "cancelado" ? (data.cancellation_reason?.trim() ?? null) : null;

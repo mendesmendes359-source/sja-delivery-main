@@ -198,6 +198,8 @@ function DeliveriesAdmin() {
             feeSelections[order.id] ?? String(order.delivery_fee_cents / 100);
           const previewDeliveryFeeCents = getDeliveryFeePreviewCents(deliveryFeeInput);
           const previewTotalCents = order.subtotal_cents + previewDeliveryFeeCents;
+          const canStartDelivery =
+            order.status === "em_preparacao" && Boolean(order.estimated_delivery_at);
 
           return (
             <Dialog
@@ -487,9 +489,13 @@ function DeliveriesAdmin() {
                       {delivery.status === "atribuido" ? (
                         <button
                           type="button"
-                          disabled={statusMutation.isPending || !order.estimated_delivery_at}
+                          disabled={statusMutation.isPending || !canStartDelivery}
                           title={
-                            order.estimated_delivery_at ? undefined : "Defina o horário primeiro"
+                            !order.estimated_delivery_at
+                              ? "Defina o horário primeiro"
+                              : order.status !== "em_preparacao"
+                                ? "Coloque primeiro o pedido em preparação"
+                                : undefined
                           }
                           onClick={() =>
                             statusMutation.mutate({

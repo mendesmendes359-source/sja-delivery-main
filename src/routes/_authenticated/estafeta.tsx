@@ -136,6 +136,8 @@ function CourierArea() {
             {data.map((delivery) => {
               const order = delivery.orders;
               const isCancelled = order.status === "cancelado";
+              const canStartDelivery =
+                order.status === "em_preparacao" && Boolean(order.estimated_delivery_at);
 
               return (
                 <article key={delivery.id} className="rounded-2xl border bg-card p-5 shadow-sm">
@@ -189,6 +191,15 @@ function CourierArea() {
                     </div>
                   ) : null}
 
+                  {order.estimated_delivery_at &&
+                  order.status !== "em_preparacao" &&
+                  delivery.status === "atribuido" &&
+                  !isCancelled ? (
+                    <div className="mt-3 rounded-md bg-amber-50 p-3 text-sm font-medium text-amber-800">
+                      Aguarde até a gestão colocar o pedido em preparação.
+                    </div>
+                  ) : null}
+
                   <div className="mt-4 flex items-center justify-between border-t pt-4">
                     <div>
                       <div className="font-semibold">{formatMoney(order.total_cents)}</div>
@@ -200,11 +211,13 @@ function CourierArea() {
                     {!isCancelled && delivery.status === "atribuido" ? (
                       <button
                         type="button"
-                        disabled={statusMutation.isPending || !order.estimated_delivery_at}
+                        disabled={statusMutation.isPending || !canStartDelivery}
                         title={
-                          order.estimated_delivery_at
-                            ? undefined
-                            : "A gestão deve definir o preço e o horário primeiro"
+                          !order.estimated_delivery_at
+                            ? "A gestão deve definir o preço e o horário primeiro"
+                            : order.status !== "em_preparacao"
+                              ? "A gestão deve colocar primeiro o pedido em preparação"
+                              : undefined
                         }
                         onClick={() =>
                           statusMutation.mutate({

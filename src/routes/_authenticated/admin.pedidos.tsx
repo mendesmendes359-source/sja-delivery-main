@@ -1,12 +1,18 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery, queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { updateOrderStatus } from "@/lib/orders.functions";
 import { formatMoney, formatDate, STATUS_LABEL } from "@/lib/format";
+import {
+  getManualStatusOptions,
+  getOrderWorkflowGuidance,
+  ORDER_STATUSES,
+  type OrderStatus,
+} from "@/lib/order-workflow";
 import { useState } from "react";
 import { toast } from "sonner";
-import { ChevronRight, MapPin, Phone } from "lucide-react";
+import { ChevronRight, MapPin, Phone, ShieldCheck } from "lucide-react";
 import type { RouteLoaderArgs } from "@/router-context";
 import {
   Dialog,
@@ -39,16 +45,7 @@ export const Route = createFileRoute("/_authenticated/admin/pedidos")({
   component: OrdersAdmin,
 });
 
-const STATUSES = [
-  "pendente",
-  "aceite",
-  "em_preparacao",
-  "saiu_entrega",
-  "entregue",
-  "cancelado",
-] as const;
-
-const STATUS_STYLES: Record<(typeof STATUSES)[number], string> = {
+const STATUS_STYLES: Record<OrderStatus, string> = {
   pendente: "bg-amber-100 text-amber-800",
   aceite: "bg-blue-100 text-blue-800",
   em_preparacao: "bg-violet-100 text-violet-800",
@@ -57,7 +54,7 @@ const STATUS_STYLES: Record<(typeof STATUSES)[number], string> = {
   cancelado: "bg-red-100 text-red-800",
 };
 
-const STATUS_OPTIONS = STATUSES.map((status) => ({
+const STATUS_OPTIONS = ORDER_STATUSES.map((status) => ({
   value: status,
   label: STATUS_LABEL[status],
 }));
@@ -78,7 +75,7 @@ function OrdersAdmin() {
   const mut = useMutation({
     mutationFn: (v: {
       order_id: string;
-      status: (typeof STATUSES)[number];
+      status: OrderStatus;
       cancellation_reason?: string | null;
     }) => updateFn({ data: v }),
     onSuccess: (result) => {
@@ -108,7 +105,7 @@ function OrdersAdmin() {
 
   const filtered = filter === "todos" ? data : data.filter((o) => o.status === filter);
   const selectedOrder = data.find((order) => order.id === selectedOrderId) ?? null;
-  const requestStatusChange = (order: (typeof data)[number], status: (typeof STATUSES)[number]) => {
+  const requestStatusChange = (order: (typeof data)[number], status: OrderStatus) => {
     if (status === "cancelado") {
       setSelectedOrderId(null);
       setCancellationDraft({
@@ -218,10 +215,8 @@ function OrdersAdmin() {
                   <AppSelect
                     value={o.status}
                     disabled={mut.isPending}
-                    onValueChange={(status) =>
-                      requestStatusChange(o, status as (typeof STATUSES)[number])
-                    }
-                    options={STATUS_OPTIONS}
+                    onValueChange={(status) => requestStatusChange(o, status as OrderStatus)}
+                    options={getManualStatusOptions(o)}
                     ariaLabel={`Estado do pedido ${o.order_number}`}
                     size="sm"
                     className="min-w-36"
@@ -358,14 +353,34 @@ function OrdersAdmin() {
                   value={selectedOrder.status}
                   disabled={mut.isPending}
                   onValueChange={(status) =>
-                    requestStatusChange(selectedOrder, status as (typeof STATUSES)[number])
+                    requestStatusChange(selectedOrder, status as OrderStatus)
                   }
-                  options={STATUS_OPTIONS}
+                  options={getManualStatusOptions(selectedOrder)}
                   ariaLabel={`Estado do pedido ${selectedOrder.order_number}`}
                   size="lg"
                   className="mt-2"
                 />
               </label>
+
+              <div className="flex items-start gap-3 rounded-xl border border-brand/20 bg-brand/5 p-4 text-sm">
+                <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-brand" aria-hidden="true" />
+                <div>
+                  <p className="font-semibold">Próximo requisito</p>
+                  <p className="mt-1 text-muted-foreground">
+                    {getOrderWorkflowGuidance(selectedOrder)}
+                  </p>
+                  {selectedOrder.order_type === "entrega" &&
+                  (selectedOrder.status === "em_preparacao" ||
+                    selectedOrder.status === "saiu_entrega") ? (
+                    <Link
+                      to="/admin/entregas"
+                      className="mt-2 inline-flex font-semibold text-brand underline underline-offset-2"
+                    >
+                      Abrir módulo Entregas
+                    </Link>
+                  ) : null}
+                </div>
+              </div>
 
               <div
                 className={`rounded-xl px-4 py-3 text-sm font-medium ${
